@@ -239,7 +239,7 @@ try:
                             mime="text/csv"
                         )
                     
-                    # Criar filtros alinhados com as colunas da tabela
+                    # Criar filtros alinhados com as colunas da tabela (sem labels)
                     st.markdown("#### 🔍 Filtros por Coluna")
                     
                     # Dicionário para armazenar os filtros digitados
@@ -253,8 +253,8 @@ try:
                                 col_name,
                                 "",
                                 key=f"filter_{col_name}",
-                                placeholder="Filtrar...",
-                                label_visibility="visible"
+                                placeholder="",
+                                label_visibility="collapsed"
                             )
                     
                     # Aplicar filtros por coluna (busca parcial, case-insensitive)
