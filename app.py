@@ -228,9 +228,9 @@ try:
                     st.markdown("---")
                     st.markdown("### 📋 Dados Detalhados")
                     
-                    # Opção de download
-                    col_download1, col_download2 = st.columns([1, 4])
-                    with col_download1:
+                    # Opção de download e contador
+                    col_info1, col_info2, col_info3 = st.columns([1, 2, 2])
+                    with col_info1:
                         csv = df_filtrado.to_csv(index=False).encode('utf-8')
                         st.download_button(
                             label="📥 Baixar CSV",
@@ -239,40 +239,37 @@ try:
                             mime="text/csv"
                         )
                     
-                    # Filtros por coluna com texto
-                    st.markdown("#### 🔍 Filtros Avançados por Coluna (digite para filtrar)")
-                    
-                    # Criar colunas para filtros
-                    num_colunas = len(df_filtrado.columns)
-                    cols_por_linha = 4
+                    # Criar filtros alinhados com as colunas da tabela
+                    st.markdown("#### 🔍 Filtros por Coluna")
                     
                     # Dicionário para armazenar os filtros digitados
                     filtros_coluna = {}
                     
-                    # Criar filtros para cada coluna em grade
-                    for i in range(0, num_colunas, cols_por_linha):
-                        cols = st.columns(cols_por_linha)
-                        for j, col_name in enumerate(df_filtrado.columns[i:i+cols_por_linha]):
-                            with cols[j]:
-                                filtros_coluna[col_name] = st.text_input(
-                                    f"{col_name}",
-                                    "",
-                                    key=f"filter_{col_name}",
-                                    placeholder="Digite para filtrar..."
-                                )
+                    # Criar uma linha de filtros alinhada com as colunas
+                    cols_filtro = st.columns(len(df_filtrado.columns))
+                    for idx, col_name in enumerate(df_filtrado.columns):
+                        with cols_filtro[idx]:
+                            filtros_coluna[col_name] = st.text_input(
+                                col_name,
+                                "",
+                                key=f"filter_{col_name}",
+                                placeholder="Filtrar...",
+                                label_visibility="visible"
+                            )
                     
                     # Aplicar filtros por coluna (busca parcial, case-insensitive)
                     df_final = df_filtrado.copy()
                     for coluna, texto_filtro in filtros_coluna.items():
-                        if texto_filtro.strip():  # Se houver texto digitado
+                        if texto_filtro.strip():
                             df_final = df_final[
                                 df_final[coluna].astype(str).str.contains(texto_filtro, case=False, na=False)
                             ]
                     
-                    st.info(f"📊 Exibindo {len(df_final)} de {len(df_filtrado)} registros")
+                    with col_info2:
+                        st.info(f"📊 Exibindo {len(df_final)} de {len(df_filtrado)} registros")
                     
                     # Exibir tabela filtrada
-                    st.dataframe(df_final, use_container_width=True, height=400)
+                    st.dataframe(df_final, use_container_width=True, height=500)
                     
                 else:
                     st.warning("⚠️ Nenhum dado encontrado no arquivo")
