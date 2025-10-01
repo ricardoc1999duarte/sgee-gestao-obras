@@ -239,8 +239,38 @@ try:
                             mime="text/csv"
                         )
                     
-                    # Exibir tabela
-                    st.dataframe(df_filtrado, use_container_width=True, height=400)
+                    # Filtros por coluna
+                    st.markdown("#### 🔍 Filtros Avançados por Coluna")
+                    
+                    # Criar colunas para filtros
+                    num_colunas = len(df_filtrado.columns)
+                    cols_por_linha = 4
+                    
+                    # Dicionário para armazenar os filtros selecionados
+                    filtros_coluna = {}
+                    
+                    # Criar filtros para cada coluna em grade
+                    for i in range(0, num_colunas, cols_por_linha):
+                        cols = st.columns(cols_por_linha)
+                        for j, col_name in enumerate(df_filtrado.columns[i:i+cols_por_linha]):
+                            with cols[j]:
+                                valores_unicos = ['Todos'] + sorted(df_filtrado[col_name].dropna().astype(str).unique().tolist())
+                                filtros_coluna[col_name] = st.selectbox(
+                                    f"{col_name}",
+                                    valores_unicos,
+                                    key=f"filter_{col_name}"
+                                )
+                    
+                    # Aplicar filtros por coluna
+                    df_final = df_filtrado.copy()
+                    for coluna, valor in filtros_coluna.items():
+                        if valor != 'Todos':
+                            df_final = df_final[df_final[coluna].astype(str) == valor]
+                    
+                    st.info(f"📊 Exibindo {len(df_final)} registros após filtros por coluna")
+                    
+                    # Exibir tabela filtrada
+                    st.dataframe(df_final, use_container_width=True, height=400)
                     
                 else:
                     st.warning("⚠️ Nenhum dado encontrado no arquivo")
