@@ -239,14 +239,14 @@ try:
                             mime="text/csv"
                         )
                     
-                    # Filtros por coluna
-                    st.markdown("#### 🔍 Filtros Avançados por Coluna")
+                    # Filtros por coluna com texto
+                    st.markdown("#### 🔍 Filtros Avançados por Coluna (digite para filtrar)")
                     
                     # Criar colunas para filtros
                     num_colunas = len(df_filtrado.columns)
                     cols_por_linha = 4
                     
-                    # Dicionário para armazenar os filtros selecionados
+                    # Dicionário para armazenar os filtros digitados
                     filtros_coluna = {}
                     
                     # Criar filtros para cada coluna em grade
@@ -254,20 +254,22 @@ try:
                         cols = st.columns(cols_por_linha)
                         for j, col_name in enumerate(df_filtrado.columns[i:i+cols_por_linha]):
                             with cols[j]:
-                                valores_unicos = ['Todos'] + sorted(df_filtrado[col_name].dropna().astype(str).unique().tolist())
-                                filtros_coluna[col_name] = st.selectbox(
+                                filtros_coluna[col_name] = st.text_input(
                                     f"{col_name}",
-                                    valores_unicos,
-                                    key=f"filter_{col_name}"
+                                    "",
+                                    key=f"filter_{col_name}",
+                                    placeholder="Digite para filtrar..."
                                 )
                     
-                    # Aplicar filtros por coluna
+                    # Aplicar filtros por coluna (busca parcial, case-insensitive)
                     df_final = df_filtrado.copy()
-                    for coluna, valor in filtros_coluna.items():
-                        if valor != 'Todos':
-                            df_final = df_final[df_final[coluna].astype(str) == valor]
+                    for coluna, texto_filtro in filtros_coluna.items():
+                        if texto_filtro.strip():  # Se houver texto digitado
+                            df_final = df_final[
+                                df_final[coluna].astype(str).str.contains(texto_filtro, case=False, na=False)
+                            ]
                     
-                    st.info(f"📊 Exibindo {len(df_final)} registros após filtros por coluna")
+                    st.info(f"📊 Exibindo {len(df_final)} de {len(df_filtrado)} registros")
                     
                     # Exibir tabela filtrada
                     st.dataframe(df_final, use_container_width=True, height=400)
