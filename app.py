@@ -23,11 +23,11 @@ st.set_page_config(
 st.markdown("""
     <style>
     /* Importar fontes do Google */
-    @import url(\'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap\');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
     /* Reset e estilos gerais */
     * {
-        font-family: \'Inter\', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
     
     .main {
@@ -114,7 +114,7 @@ st.markdown("""
     }
     
     .section-title-compact::before {
-        content: \'\';
+        content: '';
         position: absolute;
         left: 0;
         top: 50%;
@@ -295,7 +295,7 @@ st.markdown("""
         color: #333;
     }
     
-    .stMetric [data-testid=\'metric-container\'] {
+    .stMetric [data-testid='metric-container'] {
         background: transparent;
         border: none;
         box-shadow: none;
@@ -594,26 +594,26 @@ def criar_graficos_dashboard(df):
 
 # Header principal compacto
 st.markdown("""
-    <div class=\'compact-header\'>
-        <h1 class=\'compact-title\'>🏗️ SGEE+PO - Sistema de Gestão de Empreendimentos e Obras</h1>
-        <p class=\'compact-subtitle\'>Dashboard Inteligente para Análise e Monitoramento de Projetos</p>
+    <div class='compact-header'>
+        <h1 class='compact-title'>🏗️ SGEE+PO - Sistema de Gestão de Empreendimentos e Obras</h1>
+        <p class='compact-subtitle'>Dashboard Inteligente para Análise e Monitoramento de Projetos</p>
     </div>
     """, unsafe_allow_html=True)
 
 # Sidebar melhorada e compacta
 with st.sidebar:
     st.markdown("""
-        <div style=\'text-align: center; padding: 20px; background: rgba(255,255,255,0.15); border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(10px);\'>
-            <h3 style=\'color: white; margin-bottom: 10px; font-weight: 600;\'>⚙️ Painel de Controle</h3>
+        <div style='text-align: center; padding: 20px; background: rgba(255,255,255,0.15); border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(10px);'>
+            <h3 style='color: white; margin-bottom: 10px; font-weight: 600;'>⚙️ Painel de Controle</h3>
         </div>
         """, unsafe_allow_html=True)
     
     FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
     
     st.markdown("""
-        <div class=\'info-card-compact\'>
+        <div class='info-card-compact'>
             <h4>📂 Status da Conexão</h4>
-            <p style=\'color: #28a745; font-weight: 500;\'>✅ Conectado ao Google Drive</p>
+            <p style='color: #28a745; font-weight: 500;'>✅ Conectado ao Google Drive</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -642,8 +642,8 @@ try:
                     
                     # --- Seção de Busca e Filtros (Layout Horizontal) --- 
                     st.markdown("""
-                        <div class=\'horizontal-panel\'>
-                            <h3 class=\'section-title-compact\'>🔍 Sistema de Busca e Filtros</h3>
+                        <div class='horizontal-panel'>
+                            <h3 class='section-title-compact'>🔍 Sistema de Busca e Filtros</h3>
                         </div>
                         """, unsafe_allow_html=True)
                     
@@ -662,7 +662,7 @@ try:
                     
                     with col_info_busca:
                         st.markdown("""
-                            <div class=\'tip-compact\' style=\'margin-top: 25px;\'>
+                            <div class='tip-compact' style='margin-top: 25px;'>
                                 <strong>💡 Dica:</strong> Use termos específicos
                             </div>
                             """, unsafe_allow_html=True)
@@ -728,8 +728,8 @@ try:
                     
                     # --- Indicadores Principais (Layout Horizontal) ---
                     st.markdown("""
-                        <div class=\'horizontal-panel\'>
-                            <h3 class=\'section-title-compact\'>📈 Indicadores Principais</h3>
+                        <div class='horizontal-panel'>
+                            <h3 class='section-title-compact'>📈 Indicadores Principais</h3>
                         </div>
                         """, unsafe_allow_html=True)
                     
@@ -809,8 +809,8 @@ try:
                     # Dashboard de gráficos (Layout Horizontal)
                     if not df_filtrado.empty:
                         st.markdown("""
-                            <div class=\'horizontal-panel\'>
-                                <h3 class=\'section-title-compact\'>📊 Dashboard de Análises</h3>
+                            <div class='horizontal-panel'>
+                                <h3 class='section-title-compact'>📊 Dashboard de Análises</h3>
                             </div>
                             """, unsafe_allow_html=True)
                         
@@ -822,19 +822,19 @@ try:
                             
                             if "setor" in graficos:
                                 with col_graf1:
-                                    st.markdown("<div class=\'chart-horizontal\'>", unsafe_allow_html=True)
+                                    st.markdown("<div class='chart-horizontal'>", unsafe_allow_html=True)
                                     st.plotly_chart(graficos["setor"], use_container_width=True)
                                     st.markdown("</div>", unsafe_allow_html=True)
                             
                             if "status" in graficos:
                                 with col_graf2:
-                                    st.markdown("<div class=\'chart-horizontal\'>", unsafe_allow_html=True)
+                                    st.markdown("<div class='chart-horizontal'>", unsafe_allow_html=True)
                                     st.plotly_chart(graficos["status"], use_container_width=True)
                                     st.markdown("</div>", unsafe_allow_html=True)
                             
                             if "empresas" in graficos:
                                 with col_graf3:
-                                    st.markdown("<div class=\'chart-horizontal\'>", unsafe_allow_html=True)
+                                    st.markdown("<div class='chart-horizontal'>", unsafe_allow_html=True)
                                     st.plotly_chart(graficos["empresas"], use_container_width=True)
                                     st.markdown("</div>", unsafe_allow_html=True)
                     
@@ -843,7 +843,7 @@ try:
                     
                     with col_info_final:
                         if busca_global:
-                            st.info(f"🔍 Termo de busca ativo: **\'{busca_global}\'** | Registros encontrados: **{len(df_filtrado):,}**")
+                            st.info(f"🔍 Termo de busca ativo: **'{busca_global}'** | Registros encontrados: **{len(df_filtrado):,}**")
                         else:
                             st.info(f"✅ Exibindo todos os registros: **{len(df_filtrado):,}**")
                     
@@ -859,14 +859,14 @@ try:
                     
                     # Tabela de dados otimizada
                     st.markdown("""
-                        <div class=\'horizontal-panel\'>
-                            <h3 class=\'section-title-compact\'>📋 Dados Detalhados</h3>
+                        <div class='horizontal-panel'>
+                            <h3 class='section-title-compact'>📋 Dados Detalhados</h3>
                         </div>
                         """, unsafe_allow_html=True)
                     
                     if not df_filtrado.empty:
                         st.markdown("""
-                            <div class=\'tip-compact\'>
+                            <div class='tip-compact'>
                                 <strong>💡 Navegação:</strong> Use os filtros da tabela, redimensione colunas arrastando as bordas, e use Ctrl+Click para seleção múltipla
                             </div>
                             """, unsafe_allow_html=True)
@@ -907,9 +907,12 @@ try:
                         
                         # Configurar seleção
                         gb.configure_selection(
-                            selection_mode=\'multiple\',
+                            selection_mode='multiple',
                             use_checkbox=True
                         )
+
+
+
                         
                         # Configurar sidebar
                         gb.configure_side_bar()
@@ -924,14 +927,14 @@ try:
                         
                         grid_options = gb.build()
                         
-                        st.markdown("<div class=\'data-table-optimized\'>", unsafe_allow_html=True)
+                        st.markdown("<div class='data-table-optimized'>", unsafe_allow_html=True)
                         AgGrid(
                             df_exibir,
                             gridOptions=grid_options,
                             update_mode=GridUpdateMode.MODEL_CHANGED,
                             data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                             fit_columns_on_grid_load=False,
-                            theme=\'streamlit\',
+                            theme='streamlit',
                             height=500,
                             allow_unsafe_jscode=True,
                             enable_enterprise_modules=False
@@ -943,8 +946,8 @@ try:
                     # Configuração de colunas (se ativada, exibida no final para não atrapalhar o fluxo)
                     if st.session_state.get("mostrar_config", False):
                         st.markdown("""
-                            <div class=\'horizontal-panel\'>
-                                <h3 class=\'section-title-compact\'>⚙️ Configuração de Colunas</h3>
+                            <div class='horizontal-panel'>
+                                <h3 class='section-title-compact'>⚙️ Configuração de Colunas</h3>
                             </div>
                             """, unsafe_allow_html=True)
                         
@@ -1016,7 +1019,7 @@ except Exception as e:
 
 # Footer compacto
 st.markdown("""
-    <div class=\'footer-compact\'>
-        <p class=\'footer-text\'><strong>🏗️ SGEE+PO</strong> - Sistema de Gestão de Empreendimentos e Obras | Versão 3.0 Otimizada</p>
+    <div class='footer-compact'>
+        <p class='footer-text'><strong>🏗️ SGEE+PO</strong> - Sistema de Gestão de Empreendimentos e Obras | Versão 3.0 Otimizada</p>
     </div>
     """, unsafe_allow_html=True)
