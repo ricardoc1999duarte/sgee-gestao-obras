@@ -412,24 +412,57 @@ def baixar_arquivo_drive(_service, file_id):
 @st.cache_data(ttl=3600)
 def processar_dados_excel(file_stream):
     """
-    Processa o arquivo Excel e retorna um DataFrame
+    Processa o arquivo Excel e retorna um DataFrame com remoção avançada de duplicatas
     """
     try:
         df = pd.read_excel(file_stream, sheet_name="SGEEePO", engine="openpyxl")
         df = df.dropna(how="all")
         df.columns = df.columns.str.strip()
         
-        # Remove duplicatas
+        # Tamanho original
         df_original_size = len(df)
-        df = df.drop_duplicates()
-        duplicatas_removidas = df_original_size - len(df)
         
-        if duplicatas_removidas > 0:
-            st.success(f"🧹 Removidas {duplicatas_removidas} linhas duplicadas dos dados")
+        # Normalização de dados para melhor detecção de duplicatas
+        df_normalizado = df.copy()
         
-        return df
+        # Normalizar strings (remover espaços extras, converter para minúsculas)
+        for col in df_normalizado.select_dtypes(include=['object']).columns:
+            df_normalizado[col] = df_normalizado[col].astype(str).str.strip().str.lower()
+        
+        # Normalizar valores numéricos (arredondar para evitar diferenças mínimas)
+        for col in df_normalizado.select_dtypes(include=['float64', 'int64']).columns:
+            if df_normalizado[col].dtype == 'float64':
+                df_normalizado[col] = df_normalizado[col].round(2)
+        
+        # Identificar duplicatas baseado nos dados normalizados
+        duplicatas_mask = df_normalizado.duplicated(keep='first')
+        duplicatas_encontradas = duplicatas_mask.sum()
+        
+        # Remover duplicatas do DataFrame original
+        df_limpo = df[~duplicatas_mask].copy()
+        
+        # Reset do índice
+        df_limpo = df_limpo.reset_index(drop=True)
+        
+        # Relatório de limpeza
+        linhas_removidas = df_original_size - len(df_limpo)
+        
+        if linhas_removidas > 0:
+            st.success(f"🧹 **Limpeza de Dados Concluída:**")
+            st.info(f"""
+            📊 **Relatório de Duplicatas:**
+            - **Registros originais:** {df_original_size:,}
+            - **Duplicatas encontradas:** {duplicatas_encontradas:,}
+            - **Registros únicos:** {len(df_limpo):,}
+            - **Taxa de duplicação:** {(duplicatas_encontradas/df_original_size*100):.1f}%
+            """)
+        else:
+            st.success("✅ Nenhuma duplicata encontrada nos dados")
+        
+        return df_limpo
+        
     except Exception as e:
-        st.error(f"Erro ao processar Excel: {e}")
+        st.error(f"❌ Erro ao processar Excel: {e}")
         return None
 
 # Função de busca global CORRIGIDA
@@ -859,29 +892,64 @@ try:
                             </div>
                             """, unsafe_allow_html=True)
                         
-                        # Configurar AgGrid
+                        # Configurar AgGrid com larguras otimizadas
                         gb = GridOptionsBuilder.from_dataframe(df_filtrado)
                         
+                        # Configuração padrão das colunas
                         gb.configure_default_column(
                             filterable=True,
                             sortable=True,
                             resizable=True,
                             editable=False,
                             wrapText=True,
-                            autoHeight=True
+                            autoHeight=True,
+                            minWidth=100,
+                            maxWidth=400
                         )
                         
+                        # Configurar larguras específicas para colunas importantes
+                        colunas_config = {
+                            "Base SGEE.Contrato": {"width": 120, "pinned": "left"},
+                            "Base SGEE.Empresa Contratada": {"width": 200},
+                            "Base SGEE.Objeto Contrato": {"width": 300},
+                            "Base SGEE.Setor Responsavel": {"width": 150},
+                            "Base SGEE.Status Contrato": {"width": 130},
+                            "Base SGEE.Valor Contrato": {"width": 140, "type": "numericColumn"},
+                            "Base SGEE.Total Medido Acumulado": {"width": 160, "type": "numericColumn"},
+                            "Base SGEE.Saldo Contratual": {"width": 140, "type": "numericColumn"},
+                            "Base SGEE.Data Inicio": {"width": 120, "type": "dateColumn"},
+                            "Base SGEE.Data Fim": {"width": 120, "type": "dateColumn"},
+                            "Responsavel": {"width": 150}
+                        }
+                        
+                        # Aplicar configurações específicas das colunas
+                        for col_name, config in colunas_config.items():
+                            if col_name in df_filtrado.columns:
+                                gb.configure_column(col_name, **config)
+                        
+                        # Configurar paginação
                         gb.configure_pagination(
                             paginationAutoPageSize=False,
                             paginationPageSize=25
                         )
                         
+                        # Configurar seleção
                         gb.configure_selection(
                             selection_mode='multiple',
                             use_checkbox=True
                         )
                         
+                        # Configurar sidebar
                         gb.configure_side_bar()
+                        
+                        # Configurações adicionais do grid
+                        gb.configure_grid_options(
+                            enableRangeSelection=True,
+                            enableCellTextSelection=True,
+                            suppressMenuHide=True,
+                            suppressColumnVirtualisation=False
+                        )
+                        
                         grid_options = gb.build()
                         
                         st.markdown("<div class='data-table'>", unsafe_allow_html=True)
