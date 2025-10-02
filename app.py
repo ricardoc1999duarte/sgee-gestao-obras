@@ -22,11 +22,11 @@ st.set_page_config(
 st.markdown("""
     <style>
     /* Importar fontes do Google */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url(\'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap\');
     
     /* Reset e estilos gerais */
     * {
-        font-family: 'Inter', sans-serif;
+        font-family: \'Inter\', sans-serif;
     }
     
     .main {
@@ -66,7 +66,7 @@ st.markdown("""
     }
     
     .metric-container::before {
-        content: '';
+        content: \'\';
         position: absolute;
         top: 0;
         left: 0;
@@ -117,7 +117,7 @@ st.markdown("""
     }
     
     .section-title::before {
-        content: '';
+        content: \'\';
         position: absolute;
         left: 0;
         top: 50%;
@@ -341,7 +341,7 @@ st.markdown("""
         color: #333;
     }
     
-    .stMetric [data-testid="metric-container"] {
+    .stMetric [data-testid=\'metric-container\'] {
         background: transparent;
         border: none;
         box-shadow: none;
@@ -462,7 +462,7 @@ def criar_graficos_dashboard(df):
     graficos = {}
     
     # Configurações de cores personalizadas
-    cores_personalizadas = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe']
+    cores_personalizadas = [\'#667eea\', \'#764ba2\', \'#f093fb\', \'#f5576c\', \'#4facfe\', \'#00f2fe\']
     
     # Gráfico 1: Distribuição por Setor
     if "Base SGEE.Setor Responsavel" in df.columns:
@@ -581,10 +581,10 @@ def criar_graficos_dashboard(df):
 
 # Header principal
 st.markdown("""
-    <div style='text-align: center; padding: 40px 20px; margin-bottom: 30px;' class='fade-in-up'>
-        <h1 class='main-title'>🏗️ SGEE+PO</h1>
-        <h2 class='subtitle'>Sistema de Gestão de Empreendimentos e Obras</h2>
-        <p class='description'>Dashboard Inteligente para Análise e Monitoramento de Projetos</p>
+    <div style=\'text-align: center; padding: 40px 20px; margin-bottom: 30px;\' class=\'fade-in-up\'>
+        <h1 class=\'main-title\'>🏗️ SGEE+PO</h1>
+        <h2 class=\'subtitle\'>Sistema de Gestão de Empreendimentos e Obras</h2>
+        <p class=\'description\'>Dashboard Inteligente para Análise e Monitoramento de Projetos</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -593,18 +593,18 @@ st.markdown("---")
 # Sidebar melhorada
 with st.sidebar:
     st.markdown("""
-        <div style='text-align: center; padding: 25px; background: rgba(255,255,255,0.15); border-radius: 20px; margin-bottom: 25px; backdrop-filter: blur(10px);'>
-            <h2 style='color: white; margin-bottom: 15px; font-weight: 600;'>⚙️ Painel de Controle</h2>
+        <div style=\'text-align: center; padding: 25px; background: rgba(255,255,255,0.15); border-radius: 20px; margin-bottom: 25px; backdrop-filter: blur(10px);\'>
+            <h2 style=\'color: white; margin-bottom: 15px; font-weight: 600;\'>⚙️ Painel de Controle</h2>
         </div>
     """, unsafe_allow_html=True)
     
     FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
     
     st.markdown("""
-        <div class='info-card'>
+        <div class=\'info-card\'>
             <h4>📂 Status da Conexão</h4>
-            <p style='color: #28a745; font-weight: 500;'>✅ Conectado ao Google Drive</p>
-            <p style='font-size: 12px; color: #666;'>Dados sincronizados automaticamente</p>
+            <p style=\'color: #28a745; font-weight: 500;\'>✅ Conectado ao Google Drive</p>
+            <p style=\'font-size: 12px; color: #666;\'>Dados sincronizados automaticamente</p>
         </div>
     """, unsafe_allow_html=True)
     
@@ -615,31 +615,31 @@ with st.sidebar:
     st.markdown("---")
     
     st.markdown("""
-        <div class='info-card'>
+        <div class=\'info-card\'>
             <h4>🚀 Funcionalidades Avançadas</h4>
-            <div style='margin-top: 15px;'>
-                <div style='display: flex; align-items: center; margin: 8px 0;'>
-                    <span style='color: #28a745; margin-right: 8px;'>✅</span>
+            <div style=\'margin-top: 15px;\'>
+                <div style=\'display: flex; align-items: center; margin: 8px 0;\'>
+                    <span style=\'color: #28a745; margin-right: 8px;\'>✅</span>
                     <span>Visualização em tempo real</span>
                 </div>
-                <div style='display: flex; align-items: center; margin: 8px 0;'>
-                    <span style='color: #28a745; margin-right: 8px;'>✅</span>
+                <div style=\'display: flex; align-items: center; margin: 8px 0;\'>
+                    <span style=\'color: #28a745; margin-right: 8px;\'>✅</span>
                     <span>Busca global inteligente</span>
                 </div>
-                <div style='display: flex; align-items: center; margin: 8px 0;'>
-                    <span style='color: #28a745; margin-right: 8px;'>✅</span>
+                <div style=\'display: flex; align-items: center; margin: 8px 0;\'>
+                    <span style=\'color: #28a745; margin-right: 8px;\'>✅</span>
                     <span>Filtros avançados</span>
                 </div>
-                <div style='display: flex; align-items: center; margin: 8px 0;'>
-                    <span style='color: #28a745; margin-right: 8px;'>✅</span>
+                <div style=\'display: flex; align-items: center; margin: 8px 0;\'>
+                    <span style=\'color: #28a745; margin-right: 8px;\'>✅</span>
                     <span>Análise gráfica interativa</span>
                 </div>
-                <div style='display: flex; align-items: center; margin: 8px 0;'>
-                    <span style='color: #28a745; margin-right: 8px;'>✅</span>
+                <div style=\'display: flex; align-items: center; margin: 8px 0;\'>
+                    <span style=\'color: #28a745; margin-right: 8px;\'>✅</span>
                     <span>Remoção automática de duplicatas</span>
                 </div>
-                <div style='display: flex; align-items: center; margin: 8px 0;'>
-                    <span style='color: #28a745; margin-right: 8px;'>✅</span>
+                <div style=\'display: flex; align-items: center; margin: 8px 0;\'>
+                    <span style=\'color: #28a745; margin-right: 8px;\'>✅</span>
                     <span>Exportação de dados</span>
                 </div>
             </div>
@@ -660,67 +660,32 @@ try:
                 if df is not None and not df.empty:
                     st.success("✅ Dados carregados com sucesso!")
                     
-                    # Indicadores principais
+                    # --- Seção de Busca e Filtros --- 
                     st.markdown("""
-                        <div class='glass-panel fade-in-up'>
-                            <h3 class='section-title'>📈 Indicadores Principais</h3>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.metric("📊 Total de Registros", f"{len(df):,}")
-                    
-                    with col2:
-                        if "Base SGEE.Status Contrato" in df.columns:
-                            em_andamento = df[df["Base SGEE.Status Contrato"].str.contains("andamento", case=False, na=False)].shape[0]
-                            st.metric("🔄 Em Andamento", f"{em_andamento:,}")
-                        else:
-                            st.metric("🔄 Em Andamento", "N/A")
-                    
-                    with col3:
-                        if "Responsavel" in df.columns:
-                            responsaveis = df["Responsavel"].nunique()
-                            st.metric("👥 Responsáveis", f"{responsaveis:,}")
-                        else:
-                            st.metric("👥 Responsáveis", "N/A")
-                    
-                    with col4:
-                        if "Base SGEE.Setor Responsavel" in df.columns:
-                            setores = df["Base SGEE.Setor Responsavel"].nunique()
-                            st.metric("🏢 Setores", f"{setores:,}")
-                        else:
-                            st.metric("🏢 Setores", "N/A")
-                    
-                    st.markdown("---")
-                    
-                    # Sistema de busca e filtros
-                    st.markdown("""
-                        <div class='glass-panel fade-in-up'>
-                            <h3 class='section-title'>🔍 Sistema de Busca Inteligente</h3>
+                        <div class=\'glass-panel fade-in-up\'>
+                            <h3 class=\'section-title\'>🔍 Sistema de Busca e Filtros</h3>
                         </div>
                     """, unsafe_allow_html=True)
                     
                     # Busca Global
-                    col_busca, col_info = st.columns([3, 1])
+                    col_busca, col_info_busca = st.columns([3, 1])
                     
                     with col_busca:
                         busca_global = st.text_input(
                             "🔍 Busca Global",
                             "",
-                            placeholder="Digite qualquer termo para buscar em todas as colunas (ex: 'SUDECAP', 'andamento', '2024')...",
+                            placeholder="Digite qualquer termo para buscar em todas as colunas (ex: \'SUDECAP\', \'andamento\', \'2024\')...",
                             help="🎯 A busca é realizada em todas as colunas simultaneamente, ignorando maiúsculas/minúsculas"
                         )
                     
-                    with col_info:
+                    with col_info_busca:
                         st.markdown("""
-                            <div class='tip-box' style='margin-top: 25px;'>
+                            <div class=\'tip-box\' style=\'margin-top: 25px;\'>
                                 <strong>💡 Dica:</strong> Use termos específicos para resultados mais precisos
                             </div>
                         """, unsafe_allow_html=True)
                     
-                    # Aplicar busca global
+                    # Aplicar busca global primeiro
                     df_busca = aplicar_busca_global(df, busca_global)
                     
                     # Filtros específicos
@@ -760,15 +725,74 @@ try:
                     if filtro_status != "🌐 Todos" and "Base SGEE.Status Contrato" in df_filtrado.columns:
                         df_filtrado = df_filtrado[df_filtrado["Base SGEE.Status Contrato"] == filtro_status]
                     
+                    # --- Indicadores Principais (AGORA INTERATIVOS) ---
+                    st.markdown("---")
+                    st.markdown("""
+                        <div class=\'glass-panel fade-in-up\'>
+                            <h3 class=\'section-title\'>📈 Indicadores Principais</h3>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    
+                    with col1:
+                        st.metric("📊 Total de Registros", f"{len(df_filtrado):,}")
+                    
+                    with col2:
+                        if "Base SGEE.Status Contrato" in df_filtrado.columns:
+                            em_andamento = df_filtrado[df_filtrado["Base SGEE.Status Contrato"].str.contains("andamento", case=False, na=False)].shape[0]
+                            st.metric("🔄 Em Andamento", f"{em_andamento:,}")
+                        else:
+                            st.metric("🔄 Em Andamento", "N/A")
+                    
+                    with col3:
+                        if "Responsavel" in df_filtrado.columns:
+                            responsaveis = df_filtrado["Responsavel"].nunique()
+                            st.metric("👥 Responsáveis", f"{responsaveis:,}")
+                        else:
+                            st.metric("👥 Responsáveis", "N/A")
+                    
+                    with col4:
+                        if "Base SGEE.Setor Responsavel" in df_filtrado.columns:
+                            setores = df_filtrado["Base SGEE.Setor Responsavel"].nunique()
+                            st.metric("🏢 Setores", f"{setores:,}")
+                        else:
+                            st.metric("🏢 Setores", "N/A")
+                    
+                    # Novos indicadores financeiros (se as colunas existirem)
+                    st.markdown("""
+                        <div class=\'glass-panel fade-in-up\'>
+                            <h3 class=\'section-title\'>💰 Indicadores Financeiros</h3>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    col_val1, col_val2, col_val3 = st.columns(3)
+                    
+                    if "Base SGEE.Valor Contrato" in df_filtrado.columns:
+                        valor_contrato_total = df_filtrado["Base SGEE.Valor Contrato"].sum()
+                        with col_val1:
+                            st.metric("💲 Valor Total Contratado", f"R$ {valor_contrato_total:,.2f}")
+                    
+                    if "Base SGEE.Total Medido Acumulado" in df_filtrado.columns:
+                        total_medido_acumulado = df_filtrado["Base SGEE.Total Medido Acumulado"].sum()
+                        with col_val2:
+                            st.metric("✅ Total Medido Acumulado", f"R$ {total_medido_acumulado:,.2f}")
+                    
+                    if "Base SGEE.Saldo Contratual" in df_filtrado.columns:
+                        saldo_contratual = df_filtrado["Base SGEE.Saldo Contratual"].sum()
+                        with col_val3:
+                            st.metric("📉 Saldo Contratual", f"R$ {saldo_contratual:,.2f}")
+
+                    st.markdown("---")
+                    
                     # Informações sobre filtros
-                    col_info1, col_info2, col_download = st.columns([2, 2, 1])
+                    col_info_final, col_download = st.columns([4, 1])
                     
-                    with col_info1:
-                        st.info(f"📊 Exibindo **{len(df_filtrado):,}** de **{len(df):,}** registros")
-                    
-                    with col_info2:
+                    with col_info_final:
                         if busca_global:
-                            st.info(f"🔍 Termo de busca: **'{busca_global}'**")
+                            st.info(f"🔍 Termo de busca ativo: **\'{busca_global}\'**")
+                        else:
+                            st.info("✅ Nenhum termo de busca global ativo.")
                     
                     with col_download:
                         if not df_filtrado.empty:
@@ -776,7 +800,7 @@ try:
                             st.download_button(
                                 label="📥 Exportar CSV",
                                 data=csv,
-                                file_name=f"sgee_obras_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
+                                file_name=f"sgee_obras_{pd.Timestamp.now().strftime(\'%Y%m%d_%H%M\')}.csv",
                                 mime="text/csv",
                                 use_container_width=True
                             )
@@ -785,8 +809,8 @@ try:
                     if not df_filtrado.empty:
                         st.markdown("---")
                         st.markdown("""
-                            <div class='glass-panel fade-in-up'>
-                                <h3 class='section-title'>📊 Dashboard de Análises</h3>
+                            <div class=\'glass-panel fade-in-up\'>
+                                <h3 class=\'section-title\'>📊 Dashboard de Análises</h3>
                             </div>
                         """, unsafe_allow_html=True)
                         
@@ -797,36 +821,36 @@ try:
                             col_graf1, col_graf2 = st.columns(2)
                             
                             with col_graf1:
-                                st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+                                st.markdown("<div class=\'chart-container\'>", unsafe_allow_html=True)
                                 st.plotly_chart(graficos["setor"], use_container_width=True)
                                 st.markdown("</div>", unsafe_allow_html=True)
                             
                             with col_graf2:
-                                st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+                                st.markdown("<div class=\'chart-container\'>", unsafe_allow_html=True)
                                 st.plotly_chart(graficos["status"], use_container_width=True)
                                 st.markdown("</div>", unsafe_allow_html=True)
                         
                         if "valores_ano" in graficos:
-                            st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+                            st.markdown("<div class=\'chart-container\'>", unsafe_allow_html=True)
                             st.plotly_chart(graficos["valores_ano"], use_container_width=True)
                             st.markdown("</div>", unsafe_allow_html=True)
                         
                         if "empresas" in graficos:
-                            st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
+                            st.markdown("<div class=\'chart-container\'>", unsafe_allow_html=True)
                             st.plotly_chart(graficos["empresas"], use_container_width=True)
                             st.markdown("</div>", unsafe_allow_html=True)
                     
                     # Tabela de dados
                     st.markdown("---")
                     st.markdown("""
-                        <div class='glass-panel fade-in-up'>
-                            <h3 class='section-title'>📋 Dados Detalhados</h3>
+                        <div class=\'glass-panel fade-in-up\'>
+                            <h3 class=\'section-title\'>📋 Dados Detalhados</h3>
                         </div>
                     """, unsafe_allow_html=True)
                     
                     if not df_filtrado.empty:
                         st.markdown("""
-                            <div class='tip-box'>
+                            <div class=\'tip-box\'>
                                 <strong>💡 Dicas de navegação:</strong><br>
                                 • Clique no ícone <strong>☰</strong> ao lado de cada coluna para filtrar<br>
                                 • Use <strong>Ctrl+Click</strong> para selecionar múltiplas linhas<br>
@@ -853,21 +877,21 @@ try:
                         )
                         
                         gb.configure_selection(
-                            selection_mode='multiple',
+                            selection_mode=\'multiple\',
                             use_checkbox=True
                         )
                         
                         gb.configure_side_bar()
                         grid_options = gb.build()
                         
-                        st.markdown("<div class='data-table'>", unsafe_allow_html=True)
+                        st.markdown("<div class=\'data-table\'>", unsafe_allow_html=True)
                         AgGrid(
                             df_filtrado,
                             gridOptions=grid_options,
                             update_mode=GridUpdateMode.MODEL_CHANGED,
                             data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                             fit_columns_on_grid_load=False,
-                            theme='streamlit',
+                            theme=\'streamlit\',
                             height=600,
                             allow_unsafe_jscode=True,
                             enable_enterprise_modules=False
@@ -886,7 +910,7 @@ try:
 except Exception as e:
     st.error(f"❌ Erro geral: {e}")
     st.markdown("""
-        <div class='glass-panel'>
+        <div class=\'glass-panel\'>
             <h4>🔧 Instruções de Configuração</h4>
             <ol>
                 <li>No Streamlit Cloud, acesse <strong>Settings</strong> → <strong>Secrets</strong></li>
@@ -898,9 +922,9 @@ except Exception as e:
 # Footer elegante
 st.markdown("---")
 st.markdown("""
-    <div style='text-align: center; padding: 30px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; margin-top: 40px; backdrop-filter: blur(10px);'>
-        <p class='footer-text' style='font-size: 1.1rem; font-weight: 500; margin-bottom: 5px;'>🏗️ <strong>SGEE+PO</strong> - Sistema de Gestão de Empreendimentos e Obras</p>
-        <p class='footer-text' style='font-size: 0.9rem; opacity: 0.8;'>Desenvolvido para otimizar o controle e monitoramento de projetos de infraestrutura</p>
-        <p class='footer-text' style='font-size: 0.8rem; opacity: 0.6; margin-top: 10px;'>Versão 2.0 - Dashboard Inteligente</p>
+    <div style=\'text-align: center; padding: 30px 20px; background: rgba(255,255,255,0.1); border-radius: 20px; margin-top: 40px; backdrop-filter: blur(10px);\'>
+        <p class=\'footer-text\' style=\'font-size: 1.1rem; font-weight: 500; margin-bottom: 5px;\'>🏗️ <strong>SGEE+PO</strong> - Sistema de Gestão de Empreendimentos e Obras</p>
+        <p class=\'footer-text\' style=\'font-size: 0.9rem; opacity: 0.8;\'>Desenvolvido para otimizar o controle e monitoramento de projetos de infraestrutura</p>
+        <p class=\'footer-text\' style=\'font-size: 0.8rem; opacity: 0.6; margin-top: 10px;\'>Versão 2.0 - Dashboard Inteligente</p>
     </div>
 """, unsafe_allow_html=True)
