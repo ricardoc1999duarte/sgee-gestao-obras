@@ -853,8 +853,7 @@ try:
                             st.download_button(
                                 label="📥 Exportar CSV",
                                 data=csv,
-                                file_name=f"sgee_obras_{pd.Timestamp.now().strftime(\"%Y%m%d_%H%M\")}.csv",
-                                mime="text/csv",
+                                file_name=f"sgee_obras_{pd.Timestamp.now().strftime('%Y%m%d_%H%M')}.csv",
                                 use_container_width=True
                             )
                     
