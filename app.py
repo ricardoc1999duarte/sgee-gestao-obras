@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
  )
 
-# CSS (sem alterações)
+# CSS (Adicionando estilo para o container dos gráficos)
 st.markdown("""
     <style>
     @media print { .noprint { display: none !important; } }
@@ -28,6 +28,12 @@ st.markdown("""
     }
     .stPlotlyChart.clickable { cursor: pointer; }
     .stPlotlyChart.clickable:hover { border: 1px solid #007BFF; border-radius: 12px; }
+    .graph-container {
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px;
+        background-color: white;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -79,26 +85,23 @@ def processar_dados_excel(file_stream):
         st.error(f"Erro ao processar o arquivo Excel: {e}")
         return None
 
-# --- 3. SIDEBAR E BOTÃO DE CAPTURA DE IMAGEM ---
+# --- 3. SIDEBAR (sem alterações) ---
 with st.sidebar:
+    # ... (código da sidebar permanece o mesmo) ...
     st.markdown('<div class="noprint">', unsafe_allow_html=True)
     st.image("https://i.imgur.com/t2yw4UH.png", width=80 )
     st.header("Configurações")
     FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
     st.info(f"ID do Arquivo: ...{FILE_ID[-10:]}")
-    
     if st.button("🔄 Atualizar Dados"):
         st.cache_data.clear(); st.cache_resource.clear(); st.session_state.clear(); st.rerun()
-
     st.markdown("---")
     st.header("Diagnóstico")
-    
     if st.button("📸 Gerar Imagem do Painel"):
         streamlit_js_eval(js_expressions="""
             const html2canvasScript = document.createElement('script');
             html2canvasScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
             document.head.appendChild(html2canvasScript );
-
             html2canvasScript.onload = () => {
                 const element = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
                 html2canvas(element, { scale: 1.5, useCORS: true }).then(canvas => {
@@ -113,37 +116,27 @@ with st.sidebar:
     st.caption("Gera uma imagem (PNG) de todo o painel para análise e diagnóstico.")
     st.markdown('</div>', unsafe_allow_html=True)
 
+
 # --- 4. CORPO PRINCIPAL DO APLICATIVO ---
 st.title("🏗️ SGEE+PO - Painel de Gestão de Obras")
-
-# RESTAURADO: Guia de Desenvolvimento
-with st.expander("🧠 Guia de Desenvolvimento e Próximos Passos", expanded=False):
-    st.markdown("""
-    #### Estado Atual:
-    - **Painel Unificado:** Todo o conteúdo está em uma única página para facilitar a captura de tela.
-    - **Botão de Diagnóstico:** O botão "Gerar Imagem" na sidebar deve capturar o painel inteiro para nossa análise.
-    - **Correção de Cores (em andamento):** O código foi ajustado para forçar um fundo branco nos gráficos.
-    - **Cross-filtering:** A interatividade entre os gráficos está implementada.
-
-    #### Próximos Passos Sugeridos:
-    1.  **Validar Correções:** Primeiro, precisamos confirmar que a captura de tela e as cores dos gráficos estão 100% funcionais.
-    2.  **Adicionar KPIs:** Incluir os cartões de métricas (Total de Contratos, Em Andamento, etc.) que tínhamos antes.
-    3.  **Alertas de Prazo:** Criar uma seção para contratos que vencem em breve.
-    """)
 
 # Carregamento dos dados
 try:
     service = conectar_google_drive()
     file_stream = baixar_arquivo_drive(service, FILE_ID)
     df = processar_dados_excel(file_stream)
+    if df is None or df.empty:
+        st.error("O arquivo Excel foi processado, mas está vazio ou em um formato inesperado.")
+        st.stop()
     df_calc = df.copy()
     st.success("✅ Dados carregados e processados com sucesso!")
 except Exception as e:
-    st.error(f"Não foi possível carregar os dados. Erro: {e}")
+    st.error(f"Falha crítica ao carregar os dados. O aplicativo não pode continuar. Erro: {e}")
     st.stop()
 
 # --- LÓGICA DE FILTROS ---
 df_filtrado = df_calc.copy()
+# BLINDAGEM: Garante que as colunas de filtro existem antes de tentar filtrar
 if 'Setor' in df_filtrado.columns and st.session_state.get('filtro_setor', 'Todos') != 'Todos':
     df_filtrado = df_filtrado[df_filtrado['Setor'] == st.session_state.filtro_setor]
 if 'Responsavel' in df_filtrado.columns and st.session_state.get('filtro_resp', 'Todos') != 'Todos':
@@ -153,59 +146,73 @@ if st.session_state.get('filtro_setor', 'Todos') != 'Todos' or st.session_state.
     if st.button("❌ Limpar Filtros de Gráfico"):
         st.session_state.filtro_setor = 'Todos'; st.session_state.filtro_resp = 'Todos'; st.rerun()
 
-st.info(f"Exibindo {len(df_filtrado)} de {len(df_calc)} registros.")
+# --- SEÇÃO DE KPIs ---
+st.header("Indicadores Chave")
+kpi1, kpi2, kpi3 = st.columns(3)
+kpi1.metric("Total de Registros no Painel", len(df_filtrado))
+# BLINDAGEM: Verifica se a coluna existe antes de usar
+if 'Setor' in df_filtrado.columns:
+    kpi2.metric("Setores Envolvidos", df_filtrado['Setor'].nunique())
+else:
+    kpi2.metric("Setores Envolvidos", "N/A")
+if 'Responsavel' in df_filtrado.columns:
+    kpi3.metric("Responsáveis Envolvidos", df_filtrado['Responsavel'].nunique())
+else:
+    kpi3.metric("Responsáveis Envolvidos", "N/A")
 
-# --- SEÇÃO: VISÃO GERAL E GRÁFICOS ---
+st.markdown("---")
+
+# --- SEÇÃO DE GRÁFICOS ---
 st.header("Análises Gráficas Interativas")
 col_g1, col_g2 = st.columns(2)
 
 with col_g1:
-    st.subheader(f"Contratos por Setor (Filtro: {st.session_state.get('filtro_setor', 'Todos')})")
-    if 'Setor' in df_filtrado.columns:
-        setor_counts = df_filtrado['Setor'].value_counts()
-        
-        # CORREÇÃO DE COR INFALÍVEL
-        fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4)
-        fig_setor.update_layout(
-            template='plotly_white',  # Template base
-            paper_bgcolor='rgba(255,255,255,1)',  # Fundo do papel (fora do gráfico)
-            plot_bgcolor='rgba(255,255,255,1)',   # Fundo da área do gráfico
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5) # Legenda horizontal
-        )
-        
-        st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
-        selected_point = st.plotly_chart(fig_setor, use_container_width=True, on_select="rerun", key="graf_setor")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        if selected_point.selection and selected_point.selection['points']:
-            st.session_state.filtro_setor = setor_counts.index[selected_point.selection['points'][0]['pointIndex']]
-            st.rerun()
+    with st.container(border=True):
+        st.subheader(f"Contratos por Setor (Filtro: {st.session_state.get('filtro_setor', 'Todos')})")
+        # BLINDAGEM: Só mostra o gráfico se houver dados e a coluna existir
+        if not df_filtrado.empty and 'Setor' in df_filtrado.columns:
+            setor_counts = df_filtrado['Setor'].value_counts()
+            fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4)
+            fig_setor.update_layout(template='plotly_white', showlegend=True)
+            
+            st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
+            selected_point = st.plotly_chart(fig_setor, use_container_width=True, on_select="rerun", key="graf_setor")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            if selected_point.selection and selected_point.selection['points']:
+                st.session_state.filtro_setor = setor_counts.index[selected_point.selection['points'][0]['pointIndex']]
+                st.rerun()
+        else:
+            st.warning("Não há dados de 'Setor' para exibir com os filtros atuais.")
 
 with col_g2:
-    st.subheader(f"Top 10 Responsáveis (Filtro: {st.session_state.get('filtro_resp', 'Todos')})")
-    if 'Responsavel' in df_filtrado.columns:
-        resp_counts = df_filtrado['Responsavel'].value_counts().nlargest(10)
-        
-        # CORREÇÃO DE COR INFALÍVEL
-        fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation='h', labels={'y': '', 'x': 'Nº de Contratos'})
-        fig_resp.update_layout(
-            template='plotly_white',
-            paper_bgcolor='rgba(255,255,255,1)',
-            plot_bgcolor='rgba(255,255,255,1)',
-            yaxis={'categoryorder':'total ascending'}
-        )
-        
-        st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
-        selected_point_resp = st.plotly_chart(fig_resp, use_container_width=True, on_select="rerun", key="graf_resp")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        if selected_point_resp.selection and selected_point_resp.selection['points']:
-            st.session_state.filtro_resp = resp_counts.index[selected_point_resp.selection['points'][0]['pointIndex']]
-            st.rerun()
+    with st.container(border=True):
+        st.subheader(f"Top 10 Responsáveis (Filtro: {st.session_state.get('filtro_resp', 'Todos')})")
+        # BLINDAGEM: Só mostra o gráfico se houver dados e a coluna existir
+        if not df_filtrado.empty and 'Responsavel' in df_filtrado.columns:
+            resp_counts = df_filtrado['Responsavel'].value_counts().nlargest(10)
+            fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation='h', labels={'y': '', 'x': 'Nº de Contratos'})
+            fig_resp.update_layout(template='plotly_white', yaxis={'categoryorder':'total ascending'})
+            
+            st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
+            selected_point_resp = st.plotly_chart(fig_resp, use_container_width=True, on_select="rerun", key="graf_resp")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            if selected_point_resp.selection and selected_point_resp.selection['points']:
+                st.session_state.filtro_resp = resp_counts.index[selected_point_resp.selection['points'][0]['pointIndex']]
+                st.rerun()
+        else:
+            st.warning("Não há dados de 'Responsavel' para exibir com os filtros atuais.")
 
 st.markdown("---")
 
-# --- SEÇÃO: DADOS DETALHADOS ---
+# --- SEÇÃO DE DADOS DETALHADOS ---
 st.header("Dados Detalhados")
-st.dataframe(df_filtrado)
+# BLINDAGEM: Só mostra a tabela se houver dados
+if not df_filtrado.empty:
+    st.dataframe(df_filtrado)
+    csv = df_filtrado.to_csv(index=False).encode('utf-8')
+    st.download_button("📥 Baixar Dados Filtrados (CSV)", csv, "dados_filtrados.csv", "text/csv")
+else:
+    st.warning("Nenhum dado encontrado para exibir na tabela com os filtros atuais.")
+
