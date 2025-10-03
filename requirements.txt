@@ -1,5 +1,3 @@
-# requirements.txt (Versão Final Corrigida)
-
 streamlit==1.28.0
 pandas==2.2.3
 plotly==5.17.0
@@ -7,4 +5,4 @@ google-auth-oauthlib==1.1.0
 google-auth-httplib2==0.1.1
 google-api-python-client==2.100.0
 openpyxl==3.1.2
-streamlit-js-eval==0.1.5
+streamlit-js-eval==0.1.5  <-- Ótimo, a biblioteca necessária está aqui.
