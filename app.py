@@ -26,27 +26,10 @@ st.markdown("""
     .compact-title { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
     .compact-subtitle { font-size: 1.2rem; color: rgba(255, 255, 255, 0.9); font-weight: 400; margin: 0; }
     .horizontal-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border-radius: 15px; padding: 20px; margin: 10px 0; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s ease; color: #333; }
-    .horizontal-panel:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15); }
     .section-title-compact { font-size: 1.3rem; font-weight: 600; color: #333; margin-bottom: 15px; position: relative; padding-left: 12px; }
     .section-title-compact::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 20px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 2px; }
-    .stTextInput > div > div > input { background: rgba(248, 249, 255, 0.8); border: 2px solid #e1e5e9; border-radius: 10px; padding: 12px 16px; font-size: 14px; color: #333; transition: all 0.3s ease; }
-    .stTextInput > div > div > input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); background: white; }
-    .stSelectbox > div > div { background: rgba(248, 249, 255, 0.8); border: 2px solid #e1e5e9; border-radius: 10px; transition: all 0.3s ease; }
-    .stSelectbox > div > div:focus-within { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-    .stButton > button { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
-    .stButton > button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
-    .chart-horizontal { background: white; border-radius: 15px; padding: 20px; margin: 10px 0; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s ease; }
-    .chart-horizontal:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); }
-    .data-table-optimized { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); margin-top: 15px; }
-    .sidebar .sidebar-content { background: linear-gradient(180deg, #667eea 0%, #764ba2 100%); }
-    .info-card-compact { background: linear-gradient(145deg, #f8f9ff, #e8ecff); border-radius: 12px; padding: 15px; margin: 10px 0; border-left: 4px solid #667eea; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1); color: #333; transition: all 0.3s ease; }
-    .info-card-compact:hover { transform: translateX(3px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15); }
-    .info-card-compact h4 { color: #667eea; font-weight: 600; margin-bottom: 8px; font-size: 1rem; }
     .stMetric { background: linear-gradient(145deg, #f8f9ff, #e8ecff); border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1); border-left: 4px solid #667eea; transition: all 0.3s ease; color: #333; }
-    .stMetric:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2); }
-    .stMetric [data-testid='metric-container'] { background: transparent; border: none; box-shadow: none; }
-    .footer-compact { text-align: center; padding: 15px 20px; background: rgba(255,255,255,0.1); border-radius: 15px; margin-top: 20px; backdrop-filter: blur(10px); }
-    .footer-text { color: rgba(255, 255, 255, 0.9); font-weight: 300; font-size: 0.9rem; }
+    .data-table-optimized { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); margin-top: 15px; }
     .tip-compact { background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-radius: 10px; padding: 12px 16px; margin: 10px 0; border-left: 3px solid #2196f3; color: #1565c0; font-size: 13px; }
     .tip-compact strong { color: #0d47a1; }
     </style>
@@ -90,28 +73,19 @@ def processar_dados_excel(file_stream):
         df = df.dropna(how="all")
         df.columns = df.columns.str.strip()
         
-        # Lista de colunas essenciais e seus nomes corretos
         essential_cols = {
-            'Base SGEE.Valor Contrato': 0,
-            'Base SGEE.Valor Aditivos': 0,
-            '% Aditivo': 0,
-            'Base SGEE.Total Medido Acumulado': 0,
-            'Base SGEE.Saldo Contratual': 0,
-            'Base SGEE.Prazo Contratual': 0,
-            'Base SGEE.Setor Responsavel': 'N/A',
-            'Base SGEE.Responsavel': 'N/A',
-            'Base SGEE.Status Contrato': 'N/A',
-            'Base SGEE.Empresa Contratada': 'N/A'
+            'Base SGEE.Valor Contrato': 0, 'Base SGEE.Valor Aditivos': 0, '% Aditivo': 0,
+            'Base SGEE.Total Medido Acumulado': 0, 'Base SGEE.Saldo Contratual': 0, 'Base SGEE.Prazo Contratual': 0,
+            'Base SGEE.Setor Responsavel': 'N/A', 'Base SGEE.Responsavel': 'N/A',
+            'Base SGEE.Status Contrato': 'N/A', 'Base SGEE.Empresa Contratada': 'N/A'
         }
 
         for col, default_value in essential_cols.items():
             if col not in df.columns:
-                df[col] = default_value # Cria a coluna com valor padrão se não existir
-            if isinstance(default_value, int) or isinstance(default_value, float):
+                df[col] = default_value
+            if isinstance(default_value, (int, float)):
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-        df_original_size = len(df)
-        
         df_normalizado = df.copy()
         for col in df_normalizado.select_dtypes(include=["object"]).columns:
             df_normalizado[col] = df_normalizado[col].astype(str).str.strip().str.lower()
@@ -139,43 +113,11 @@ def aplicar_busca_global(df, termo_busca):
     mask = df.apply(lambda row: any(termo_busca in str(val).lower() for val in row), axis=1)
     return df[mask]
 
-# Função para configurações de colunas
-def get_configuracao_colunas_default():
-    # CORRIGIDO: Usando os nomes de colunas corretos do arquivo
-    return {
-        "Num CNT": {"width": 120, "visible": True, "pinned": "left"},
-        "Objeto Cnt": {"width": 400, "visible": True},
-        "Nome Empreendimento": {"width": 350, "visible": True},
-        "Escopo": {"width": 500, "visible": True},
-        "Base SGEE.Empresa Contratada": {"width": 250, "visible": True},
-        "Base SGEE.Setor Responsavel": {"width": 150, "visible": True},
-        "Base SGEE.Status Contrato": {"width": 130, "visible": True},
-        "Base SGEE.Valor Contrato": {"width": 140, "visible": True, "type": "numericColumn"},
-        "Base SGEE.Total Medido Acumulado": {"width": 160, "visible": True, "type": "numericColumn"},
-        "Base SGEE.Saldo Contratual": {"width": 140, "visible": True, "type": "numericColumn"},
-        "Base SGEE.Data Inicio Cnt": {"width": 120, "visible": True, "type": "dateColumn"},
-        "Base SGEE.Data Fim Cnt Com Aditivos": {"width": 120, "visible": True, "type": "dateColumn"},
-        "Base SGEE.Responsavel": {"width": 150, "visible": True},
-        "Base SGEE.Ano Finalização Contrato": {"width": 120, "visible": False},
-        "Base SGEE.Total Contrato": {"width": 140, "visible": False, "type": "numericColumn"},
-        "Base SGEE.Valor Aditivos": {"width": 140, "visible": True, "type": "numericColumn"},
-        "Base SGEE.Prazo Contratual": {"width": 120, "visible": True, "type": "numericColumn"}
-    }
-
-def carregar_configuracao_colunas():
-    if "config_colunas" not in st.session_state:
-        st.session_state["config_colunas"] = get_configuracao_colunas_default()
-    return st.session_state["config_colunas"]
-
-def salvar_configuracao_colunas(config):
-    st.session_state["config_colunas"] = config
-
 # Função para criar gráficos
 def criar_graficos_dashboard(df):
     graficos = {}
     cores = ["#667eea", "#764ba2", "#f093fb", "#f5576c", "#4facfe", "#00f2fe"]
     
-    # CORRIGIDO: Usando os nomes de colunas corretos
     if "Base SGEE.Setor Responsavel" in df.columns:
         setor_counts = df["Base SGEE.Setor Responsavel"].value_counts().head(8)
         if not setor_counts.empty:
@@ -201,18 +143,14 @@ def criar_graficos_dashboard(df):
     return graficos
 
 # --- Início da Interface ---
-st.markdown("<div class='compact-header'><h1 class='compact-title'>🏗️ SGEE+PO - Gestão de Empreendimentos e Obras</h1><p class='compact-subtitle'>Dashboard Inteligente para Análise e Monitoramento de Projetos</p></div>", unsafe_allow_html=True)
+st.markdown("<div class='compact-header'><h1 class='compact-title'>🏗️ SGEE+PO - Gestão de Obras</h1><p class='compact-subtitle'>Dashboard Inteligente para Análise e Monitoramento de Projetos</p></div>", unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown("<div style='text-align: center; padding: 20px; background: rgba(255,255,255,0.15); border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(10px);'><h3 style='color: white; font-weight: 600;'>⚙️ Painel de Controle</h3></div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; padding: 20px; background: rgba(255,255,255,0.15); border-radius: 15px; margin-bottom: 20px;'><h3 style='color: white; font-weight: 600;'>⚙️ Painel de Controle</h3></div>", unsafe_allow_html=True)
     FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
-    st.markdown("<div class='info-card-compact'><h4>📂 Status da Conexão</h4><p style='color: #28a745; font-weight: 500;'>✅ Conectado ao Google Drive</p></div>", unsafe_allow_html=True)
     if st.button("🔄 Atualizar Dados", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
-    st.markdown("---")
-    if st.button("⚙️ Configurar Colunas da Tabela", use_container_width=True):
-        st.session_state["mostrar_config"] = not st.session_state.get("mostrar_config", False)
 
 try:
     service = conectar_google_drive()
@@ -232,7 +170,6 @@ try:
                     
                     col_filtro1, col_filtro2, col_filtro3 = st.columns(3)
                     
-                    # CORRIGIDO: Usando os nomes de colunas corretos para os filtros
                     with col_filtro1:
                         setores_list = ["🌐 Todos"] + sorted(df_busca["Base SGEE.Setor Responsavel"].dropna().unique().tolist())
                         filtro_setor = st.selectbox("🏢 Setor", setores_list, key="filtro_setor")
@@ -252,7 +189,6 @@ try:
                     
                     st.markdown("<div class='horizontal-panel'><h3 class='section-title-compact'>📈 Indicadores Principais</h3></div>", unsafe_allow_html=True)
                     
-                    # CORRIGIDO: Usando os nomes de colunas corretos para as métricas
                     col1, col2, col3, col4, col5 = st.columns(5)
                     with col1: st.metric("📊 Total Contratos", f"{len(df_filtrado):,}")
                     with col2: st.metric("👥 Responsáveis", f"{df_filtrado['Base SGEE.Responsavel'].nunique():,}")
@@ -294,59 +230,34 @@ try:
                     
                     st.markdown("<div class='horizontal-panel'><h3 class='section-title-compact'>📋 Dados Detalhados</h3></div>", unsafe_allow_html=True)
                     if not df_filtrado.empty:
-                        st.markdown("<div class='tip-compact'><strong>💡 Navegação:</strong> Use a barra lateral da tabela para mostrar/ocultar colunas, filtre e ordene clicando nos cabeçalhos.</div>", unsafe_allow_html=True)
+                        st.markdown("<div class='tip-compact'><strong>💡 Dica:</strong> Clique no ícone de funil  बगल de cada coluna para filtrar os dados diretamente na tabela.</div>", unsafe_allow_html=True)
                         
-                        config_colunas = carregar_configuracao_colunas()
-                        colunas_visiveis = [col for col, conf in config_colunas.items() if conf.get("visible", True) and col in df_filtrado.columns]
-                        df_exibir = df_filtrado[colunas_visiveis]
-                        
-                        gb = GridOptionsBuilder.from_dataframe(df_exibir)
-                        gb.configure_default_column(filterable=True, sortable=True, resizable=True, wrapText=True, autoHeight=True)
-                        
-                        for col_name, config in config_colunas.items():
-                            if col_name in df_exibir.columns:
-                                gb.configure_column(col_name, **{k: v for k, v in config.items() if k != "visible"})
-                        
+                        gb = GridOptionsBuilder.from_dataframe(df_filtrado)
+                        gb.configure_default_column(
+                            filterable=True, # Habilita o filtro em todas as colunas
+                            sortable=True, 
+                            resizable=True, 
+                            wrapText=True, 
+                            autoHeight=True
+                        )
                         gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
                         gb.configure_selection(selection_mode='multiple', use_checkbox=True)
-                        gb.configure_side_bar()
                         
                         grid_options = gb.build()
                         
                         st.markdown("<div class='data-table-optimized'>", unsafe_allow_html=True)
-                        AgGrid(df_exibir, gridOptions=grid_options, height=500, allow_unsafe_jscode=True, enable_enterprise_modules=False, theme='streamlit')
+                        AgGrid(
+                            df_filtrado, 
+                            gridOptions=grid_options, 
+                            height=600, 
+                            allow_unsafe_jscode=True, 
+                            # CORREÇÃO CRÍTICA: Habilita os recursos avançados, incluindo filtros de coluna
+                            enable_enterprise_modules=True, 
+                            theme='streamlit'
+                        )
                         st.markdown("</div>", unsafe_allow_html=True)
                     else:
                         st.warning("⚠️ Nenhum registro encontrado com os filtros aplicados.")
-                    
-                    if st.session_state.get("mostrar_config", False):
-                        st.markdown("<div class='horizontal-panel'><h3 class='section-title-compact'>⚙️ Configuração de Visibilidade das Colunas</h3></div>", unsafe_allow_html=True)
-                        
-                        config_atual = carregar_configuracao_colunas()
-                        for col in df.columns:
-                            if col not in config_atual:
-                                config_atual[col] = {"width": 150, "visible": True}
-
-                        todas_colunas = sorted(config_atual.keys())
-                        num_cols = 3
-                        cols_per_section = (len(todas_colunas) + num_cols - 1) // num_cols
-                        
-                        col_config_list = st.columns(num_cols)
-                        for i, col_name in enumerate(todas_colunas):
-                            col_idx = i // cols_per_section
-                            with col_config_list[col_idx]:
-                                config_atual[col_name]["visible"] = st.checkbox(col_name, value=config_atual[col_name].get("visible", True), key=f"vis_{col_name}")
-                        
-                        col_save, col_reset = st.columns(2)
-                        if col_save.button("💾 Salvar Configuração", use_container_width=True):
-                            salvar_configuracao_colunas(config_atual)
-                            st.success("✅ Configuração salva! A tabela será atualizada.")
-                            st.rerun()
-                        
-                        if col_reset.button("🔄 Restaurar Padrão", use_container_width=True):
-                            st.session_state["config_colunas"] = get_configuracao_colunas_default()
-                            st.success("✅ Configuração restaurada! A tabela será atualizada.")
-                            st.rerun()
 
                 else:
                     st.warning("⚠️ Nenhum dado encontrado ou o arquivo está vazio.")
@@ -357,5 +268,3 @@ try:
 
 except Exception as e:
     st.error(f"❌ Ocorreu um erro inesperado na aplicação: {e}")
-
-st.markdown("<div class='footer-compact'><p class='footer-text'><strong>🏗️ SGEE+PO</strong> - Sistema de Gestão de Empreendimentos e Obras | Versão 3.1 Corrigida</p></div>", unsafe_allow_html=True)
