@@ -1,9 +1,10 @@
+# requirements.txt (Versão Final Corrigida)
+
 streamlit==1.28.0
 pandas==2.2.3
 plotly==5.17.0
-google-auth==2.23.0  # Esta é uma dependência transitória, não precisa estar aqui
 google-auth-oauthlib==1.1.0
 google-auth-httplib2==0.1.1
 google-api-python-client==2.100.0
 openpyxl==3.1.2
-streamlit-aggrid==0.3.4 # Remover se não for usar
+streamlit-js-eval==0.1.5
