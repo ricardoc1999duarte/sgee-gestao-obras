@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit_js_eval import streamlit_js_eval, get_geolocation
+from streamlit_js_eval import streamlit_js_eval
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
@@ -18,15 +18,10 @@ st.set_page_config(
 # CSS (incluindo classes para impressão e gráficos clicáveis)
 st.markdown("""
     <style>
-    /* Oculta elementos na impressão */
-    @media print {
-        .noprint { display: none !important; }
-    }
-    /* Estilos gerais */
-    [data-testid="stAppViewContainer"] > .main { background-color: #F0F2F6; }
+    @media print { .noprint { display: none !important; } }
+    [data-testid="stAppViewContainer"] { background-color: #F0F2F6; }
     h1, h3 { color: #0B3D91; }
     h3 { border-bottom: 2px solid #DDE6F6; padding-bottom: 8px; margin-top: 24px; }
-    /* Estilos dos cartões de métrica */
     [data-testid="stMetric"] {
         background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px;
         padding: 25px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -35,14 +30,13 @@ st.markdown("""
     [data-testid="stMetric"]:hover { transform: translateY(-5px); }
     [data-testid="stMetricLabel"] { color: #64748B !important; font-weight: 500; }
     [data-testid="stMetricValue"] { color: #0B3D91; font-size: 2.2rem; font-weight: 700; }
-    /* Estilo para gráficos clicáveis */
     .stPlotlyChart.clickable { cursor: pointer; }
     .stPlotlyChart.clickable:hover { border: 1px solid #007BFF; border-radius: 12px; }
     </style>
 """, unsafe_allow_html=True)
 
 
-# --- 2. FUNÇÕES DE BACK-END (Conexão, Download, Processamento) ---
+# --- 2. FUNÇÕES DE BACK-END (sem alterações) ---
 @st.cache_resource
 def conectar_google_drive():
     try:
@@ -89,44 +83,44 @@ def processar_dados_excel(file_stream):
         st.error(f"Erro ao processar o arquivo Excel: {e}")
         return None
 
-# --- 3. SIDEBAR E SISTEMA DE PRINT ---
+# --- 3. SIDEBAR E SISTEMA DE PRINT CORRIGIDO ---
 with st.sidebar:
-    # Adiciona classe para não imprimir a sidebar
     st.markdown('<div class="noprint">', unsafe_allow_html=True)
-    
     st.image("https://i.imgur.com/t2yw4UH.png", width=80 )
     st.header("Configurações")
     FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
     st.info(f"ID do Arquivo: ...{FILE_ID[-10:]}")
     
     if st.button("🔄 Atualizar Dados"):
-        st.cache_data.clear()
-        st.cache_resource.clear()
-        st.session_state.clear()
-        st.rerun()
+        st.cache_data.clear(); st.cache_resource.clear(); st.session_state.clear(); st.rerun()
 
     st.markdown("---")
     st.header("Exportar Relatório")
     
+    # BOTÃO DE PRINT CORRIGIDO E MAIS ROBUSTO
     if st.button("🖨️ Gerar Relatório PDF/Print"):
         streamlit_js_eval(js_expressions="""
-            const element = window.parent.document.querySelector('.main > div');
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-            document.head.appendChild(script );
-            script.onload = () => {
-                html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdf = new (window.jspdf.jsPDF)({
-                        orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height]
-                    });
-                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-                    pdf.output('bloburl');
-                });
-            }
+            // Adiciona as bibliotecas JS na página
             const jspdfScript = document.createElement('script');
             jspdfScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
             document.head.appendChild(jspdfScript );
+
+            const html2canvasScript = document.createElement('script');
+            html2canvasScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            document.head.appendChild(html2canvasScript );
+
+            // Espera as bibliotecas carregarem e então executa a captura
+            html2canvasScript.onload = () => {
+                const element = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
+                html2canvas(element, { scale: 1.5, useCORS: true }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new window.jspdf.jsPDF({
+                        orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height]
+                    });
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                    pdf.output('bloburl'); // Abre o PDF em uma nova aba
+                });
+            };
         """)
     st.caption("Captura a tela inteira e gera um PDF.")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -134,62 +128,33 @@ with st.sidebar:
 # --- 4. CORPO PRINCIPAL DO APLICATIVO ---
 st.title("🏗️ SGEE+PO - Painel de Gestão de Obras")
 
-# Inicializa o estado da sessão para filtros interativos
-if 'filtro_setor' not in st.session_state:
-    st.session_state['filtro_setor'] = 'Todos'
-if 'filtro_resp' not in st.session_state:
-    st.session_state['filtro_resp'] = 'Todos'
+# Inicializa o estado da sessão
+if 'filtro_setor' not in st.session_state: st.session_state['filtro_setor'] = 'Todos'
+if 'filtro_resp' not in st.session_state: st.session_state['filtro_resp'] = 'Todos'
 
-# Guia de Desenvolvimento
-with st.expander("🧠 Guia de Desenvolvimento e Próximos Passos", expanded=False):
-    st.markdown("""
-    #### Estado Atual:
-    - **Impressão Corrigida:** Usa `html2canvas` para gerar um PDF/Print fiel da tela inteira.
-    - **Cross-filtering Ativo:** Clicar em um setor no gráfico de pizza ou em um responsável no gráfico de barras filtra todo o painel. Um botão "Limpar Filtros" foi adicionado.
-    - **Estrutura Robusta:** O código está organizado com `session_state` para gerenciar a interatividade.
-    
-    #### Próximos Passos Sugeridos:
-    1.  **Alertas de Prazo:** Criar uma seção para contratos vencendo em 30/60/90 dias.
-    2.  **Formatação Condicional:** Colorir a tabela de dados para destacar contratos críticos.
-    3.  **Análise de Evolução:** Adicionar um gráfico de linhas para acompanhar valores ao longo do tempo.
-    """)
-
-# Carregamento e processamento dos dados
+# Carregamento dos dados
 try:
     service = conectar_google_drive()
     file_stream = baixar_arquivo_drive(service, FILE_ID)
     df = processar_dados_excel(file_stream)
-    
-    # Cálculos e engenharia de features
-    df_calc = df.copy()
-    # ... (seus cálculos de %_Executado, Dias_Restantes, etc. entram aqui) ...
+    df_calc = df.copy() # Seus cálculos de novas colunas viriam aqui
     st.success("✅ Dados carregados e processados com sucesso!")
 except Exception as e:
     st.error(f"Não foi possível carregar os dados. Erro: {e}")
     st.stop()
 
-# --- LÓGICA DE FILTROS (INCLUINDO CROSS-FILTERING) ---
+# --- LÓGICA DE FILTROS ---
 df_filtrado = df_calc.copy()
-
-# Filtro de texto geral
-busca = st.text_input("🔎 Buscar em todos os campos", key="busca_geral")
-if busca:
-    df_filtrado = df_filtrado[df_filtrado.apply(lambda row: any(busca.lower() in str(cell).lower() for cell in row), axis=1)]
-
-# Aplica filtros do estado da sessão (cross-filtering)
 if st.session_state.filtro_setor != 'Todos':
     df_filtrado = df_filtrado[df_filtrado['Setor'] == st.session_state.filtro_setor]
 if st.session_state.filtro_resp != 'Todos':
     df_filtrado = df_filtrado[df_filtrado['Responsavel'] == st.session_state.filtro_resp]
 
-# Botão para limpar filtros de gráficos
 if st.session_state.filtro_setor != 'Todos' or st.session_state.filtro_resp != 'Todos':
     if st.button("❌ Limpar Filtros de Gráfico"):
-        st.session_state.filtro_setor = 'Todos'
-        st.session_state.filtro_resp = 'Todos'
-        st.rerun()
+        st.session_state.filtro_setor = 'Todos'; st.session_state.filtro_resp = 'Todos'; st.rerun()
 
-st.info(f"Exibindo {len(df_filtrado)} de {len(df_calc)} registros com os filtros aplicados.")
+st.info(f"Exibindo {len(df_filtrado)} de {len(df_calc)} registros.")
 
 # --- VISUALIZAÇÃO EM ABAS ---
 tab1, tab2 = st.tabs(["📊 Visão Geral Interativa", "📋 Dados Detalhados"])
@@ -201,7 +166,10 @@ with tab1:
     with col_g1:
         st.subheader(f"Contratos por Setor (Filtro: {st.session_state.filtro_setor})")
         setor_counts = df_filtrado['Setor'].value_counts()
-        fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4)
+        
+        # CORREÇÃO DE COR DO GRÁFICO
+        fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4, template='plotly_white')
+        fig_setor.update_layout(showlegend=True) # Garante que a legenda seja exibida
         
         st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
         selected_point = st.plotly_chart(fig_setor, use_container_width=True, on_select="rerun", key="graf_setor")
@@ -213,9 +181,12 @@ with tab1:
             st.rerun()
 
     with col_g2:
-        st.subheader(f"Contratos por Responsável (Filtro: {st.session_state.filtro_resp})")
+        st.subheader(f"Top 10 Responsáveis (Filtro: {st.session_state.filtro_resp})")
         resp_counts = df_filtrado['Responsavel'].value_counts().nlargest(10)
-        fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation='h', labels={'y': '', 'x': 'Nº de Contratos'})
+        
+        # CORREÇÃO DE COR DO GRÁFICO
+        fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation='h', template='plotly_white',
+                          labels={'y': '', 'x': 'Nº de Contratos'})
         fig_resp.update_layout(yaxis={'categoryorder':'total ascending'})
         
         st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
@@ -230,7 +201,3 @@ with tab1:
 with tab2:
     st.header("Dados Detalhados")
     st.dataframe(df_filtrado)
-    
-    csv = df_filtrado.to_csv(index=False).encode('utf-8')
-    st.download_button("📥 Baixar Dados Filtrados (CSV)", csv, "dados_filtrados.csv", "text/csv")
-
