@@ -5,7 +5,7 @@ from streamlit_js_eval import streamlit_js_eval
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
-import io 
+import io
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA E ESTILO ---
 st.set_page_config(
@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
  )
 
-# CSS (incluindo classes para impressão e gráficos clicáveis)
+# CSS (sem alterações)
 st.markdown("""
     <style>
     @media print { .noprint { display: none !important; } }
@@ -113,19 +113,30 @@ with st.sidebar:
     st.caption("Gera uma imagem (PNG) de todo o painel para análise e diagnóstico.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. CORPO PRINCIPAL DO APLICATIVO (PAINEL UNIFICADO) ---
+# --- 4. CORPO PRINCIPAL DO APLICATIVO ---
 st.title("🏗️ SGEE+PO - Painel de Gestão de Obras")
 
-# Inicializa o estado da sessão
-if 'filtro_setor' not in st.session_state: st.session_state['filtro_setor'] = 'Todos'
-if 'filtro_resp' not in st.session_state: st.session_state['filtro_resp'] = 'Todos'
+# RESTAURADO: Guia de Desenvolvimento
+with st.expander("🧠 Guia de Desenvolvimento e Próximos Passos", expanded=False):
+    st.markdown("""
+    #### Estado Atual:
+    - **Painel Unificado:** Todo o conteúdo está em uma única página para facilitar a captura de tela.
+    - **Botão de Diagnóstico:** O botão "Gerar Imagem" na sidebar deve capturar o painel inteiro para nossa análise.
+    - **Correção de Cores (em andamento):** O código foi ajustado para forçar um fundo branco nos gráficos.
+    - **Cross-filtering:** A interatividade entre os gráficos está implementada.
+
+    #### Próximos Passos Sugeridos:
+    1.  **Validar Correções:** Primeiro, precisamos confirmar que a captura de tela e as cores dos gráficos estão 100% funcionais.
+    2.  **Adicionar KPIs:** Incluir os cartões de métricas (Total de Contratos, Em Andamento, etc.) que tínhamos antes.
+    3.  **Alertas de Prazo:** Criar uma seção para contratos que vencem em breve.
+    """)
 
 # Carregamento dos dados
 try:
     service = conectar_google_drive()
     file_stream = baixar_arquivo_drive(service, FILE_ID)
     df = processar_dados_excel(file_stream)
-    df_calc = df.copy() # Seus cálculos de novas colunas viriam aqui
+    df_calc = df.copy()
     st.success("✅ Dados carregados e processados com sucesso!")
 except Exception as e:
     st.error(f"Não foi possível carregar os dados. Erro: {e}")
@@ -133,12 +144,12 @@ except Exception as e:
 
 # --- LÓGICA DE FILTROS ---
 df_filtrado = df_calc.copy()
-if st.session_state.filtro_setor != 'Todos':
+if 'Setor' in df_filtrado.columns and st.session_state.get('filtro_setor', 'Todos') != 'Todos':
     df_filtrado = df_filtrado[df_filtrado['Setor'] == st.session_state.filtro_setor]
-if st.session_state.filtro_resp != 'Todos':
+if 'Responsavel' in df_filtrado.columns and st.session_state.get('filtro_resp', 'Todos') != 'Todos':
     df_filtrado = df_filtrado[df_filtrado['Responsavel'] == st.session_state.filtro_resp]
 
-if st.session_state.filtro_setor != 'Todos' or st.session_state.filtro_resp != 'Todos':
+if st.session_state.get('filtro_setor', 'Todos') != 'Todos' or st.session_state.get('filtro_resp', 'Todos') != 'Todos':
     if st.button("❌ Limpar Filtros de Gráfico"):
         st.session_state.filtro_setor = 'Todos'; st.session_state.filtro_resp = 'Todos'; st.rerun()
 
@@ -149,42 +160,52 @@ st.header("Análises Gráficas Interativas")
 col_g1, col_g2 = st.columns(2)
 
 with col_g1:
-    st.subheader(f"Contratos por Setor (Filtro: {st.session_state.filtro_setor})")
-    setor_counts = df_filtrado['Setor'].value_counts()
-    fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4, template='plotly_white')
-    fig_setor.update_layout(showlegend=True)
-    
-    st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
-    selected_point = st.plotly_chart(fig_setor, use_container_width=True, on_select="rerun", key="graf_setor")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    if selected_point.selection and selected_point.selection['points']:
-        setor_selecionado = setor_counts.index[selected_point.selection['points'][0]['pointIndex']]
-        st.session_state.filtro_setor = setor_selecionado
-        st.rerun()
+    st.subheader(f"Contratos por Setor (Filtro: {st.session_state.get('filtro_setor', 'Todos')})")
+    if 'Setor' in df_filtrado.columns:
+        setor_counts = df_filtrado['Setor'].value_counts()
+        
+        # CORREÇÃO DE COR INFALÍVEL
+        fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4)
+        fig_setor.update_layout(
+            template='plotly_white',  # Template base
+            paper_bgcolor='rgba(255,255,255,1)',  # Fundo do papel (fora do gráfico)
+            plot_bgcolor='rgba(255,255,255,1)',   # Fundo da área do gráfico
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.4, xanchor="center", x=0.5) # Legenda horizontal
+        )
+        
+        st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
+        selected_point = st.plotly_chart(fig_setor, use_container_width=True, on_select="rerun", key="graf_setor")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        if selected_point.selection and selected_point.selection['points']:
+            st.session_state.filtro_setor = setor_counts.index[selected_point.selection['points'][0]['pointIndex']]
+            st.rerun()
 
 with col_g2:
-    st.subheader(f"Top 10 Responsáveis (Filtro: {st.session_state.filtro_resp})")
-    resp_counts = df_filtrado['Responsavel'].value_counts().nlargest(10)
-    fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation='h', template='plotly_white',
-                      labels={'y': '', 'x': 'Nº de Contratos'})
-    fig_resp.update_layout(yaxis={'categoryorder':'total ascending'})
-    
-    st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
-    selected_point_resp = st.plotly_chart(fig_resp, use_container_width=True, on_select="rerun", key="graf_resp")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    if selected_point_resp.selection and selected_point_resp.selection['points']:
-        resp_selecionado = resp_counts.index[selected_point_resp.selection['points'][0]['pointIndex']]
-        st.session_state.filtro_resp = resp_selecionado
-        st.rerun()
+    st.subheader(f"Top 10 Responsáveis (Filtro: {st.session_state.get('filtro_resp', 'Todos')})")
+    if 'Responsavel' in df_filtrado.columns:
+        resp_counts = df_filtrado['Responsavel'].value_counts().nlargest(10)
+        
+        # CORREÇÃO DE COR INFALÍVEL
+        fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation='h', labels={'y': '', 'x': 'Nº de Contratos'})
+        fig_resp.update_layout(
+            template='plotly_white',
+            paper_bgcolor='rgba(255,255,255,1)',
+            plot_bgcolor='rgba(255,255,255,1)',
+            yaxis={'categoryorder':'total ascending'}
+        )
+        
+        st.markdown('<div class="stPlotlyChart clickable">', unsafe_allow_html=True)
+        selected_point_resp = st.plotly_chart(fig_resp, use_container_width=True, on_select="rerun", key="graf_resp")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        if selected_point_resp.selection and selected_point_resp.selection['points']:
+            st.session_state.filtro_resp = resp_counts.index[selected_point_resp.selection['points'][0]['pointIndex']]
+            st.rerun()
 
 st.markdown("---")
 
 # --- SEÇÃO: DADOS DETALHADOS ---
 st.header("Dados Detalhados")
 st.dataframe(df_filtrado)
-
-csv = df_filtrado.to_csv(index=False).encode('utf-8')
-st.download_button("📥 Baixar Dados Filtrados (CSV)", csv, "dados_filtrados.csv", "text/csv")
-
