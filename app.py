@@ -133,121 +133,91 @@ try:
                     st.success("✅ Dados carregados com sucesso!")
                     
                     # Exibir informações básicas
-                    st.markdown("### 📈 Indicadores Principais")
-                    
-                    col1, col2, col3, col4 = st.columns(4)
-                    
-                    with col1:
-                        st.metric("Total de Registros", len(df))
-                    
-                    with col2:
+                        st.markdown("### 📈 Indicadores Principais")
+                        col1, col2, col3, col4 = st.columns(4)
+                        col1.metric("Total de Registros", len(df))
                         if 'Status/pri' in df.columns:
                             em_andamento = df[df['Status/pri'].str.contains('Andamento', na=False)].shape[0]
-                            st.metric("Em Andamento", em_andamento)
+                            col2.metric("Em Andamento", em_andamento)
                         else:
-                            st.metric("Em Andamento", "N/A")
-                    
-                    with col3:
+                            col2.metric("Em Andamento", "N/A")
                         if 'Responsavel' in df.columns:
                             responsaveis = df['Responsavel'].nunique()
-                            st.metric("Responsáveis", responsaveis)
+                            col3.metric("Responsáveis", responsaveis)
                         else:
-                            st.metric("Responsáveis", "N/A")
-                    
-                    with col4:
+                            col3.metric("Responsáveis", "N/A")
                         if 'Setor' in df.columns:
                             setores = df['Setor'].nunique()
-                            st.metric("Setores", setores)
+                            col4.metric("Setores", setores)
                         else:
-                            st.metric("Setores", "N/A")
-                    
-                        # Novos Indicadores
+                            col4.metric("Setores", "N/A")
                         st.markdown("---")
                         st.markdown("### 🏆 Indicadores Avançados")
                         colA1, colA2, colA3, colA4 = st.columns(4)
-                        with colA1:
-                            if 'Valor Contrato' in df.columns:
-                                valor_total = df['Valor Contrato'].sum()
-                                st.metric("Valor Total Contratado", f"R$ {valor_total:,.2f}")
-                            else:
-                                st.metric("Valor Total Contratado", "N/A")
-                        with colA2:
-                            if 'Saldo Contratual' in df.columns:
-                                saldo_total = df['Saldo Contratual'].sum()
-                                st.metric("Saldo Contratual", f"R$ {saldo_total:,.2f}")
-                            else:
-                                st.metric("Saldo Contratual", "N/A")
-                        with colA3:
-                            if 'Total Medido Acumulado' in df.columns:
-                                medido_total = df['Total Medido Acumulado'].sum()
-                                st.metric("Total Medido Acumulado", f"R$ {medido_total:,.2f}")
-                            else:
-                                st.metric("Total Medido Acumulado", "N/A")
-                        with colA4:
-                            if 'Dias após vencimento' in df.columns:
-                                vencidos = df[df['Dias após vencimento'] > 0].shape[0]
-                                st.metric("Contratos Vencidos", vencidos)
-                            else:
-                                st.metric("Contratos Vencidos", "N/A")
+                        if 'Valor Contrato' in df.columns:
+                            valor_total = df['Valor Contrato'].sum()
+                            colA1.metric("Valor Total Contratado", f"R$ {valor_total:,.2f}")
+                        else:
+                            colA1.metric("Valor Total Contratado", "N/A")
+                        if 'Saldo Contratual' in df.columns:
+                            saldo_total = df['Saldo Contratual'].sum()
+                            colA2.metric("Saldo Contratual", f"R$ {saldo_total:,.2f}")
+                        else:
+                            colA2.metric("Saldo Contratual", "N/A")
+                        if 'Total Medido Acumulado' in df.columns:
+                            medido_total = df['Total Medido Acumulado'].sum()
+                            colA3.metric("Total Medido Acumulado", f"R$ {medido_total:,.2f}")
+                        else:
+                            colA3.metric("Total Medido Acumulado", "N/A")
+                        if 'Dias após vencimento' in df.columns:
+                            vencidos = df[df['Dias após vencimento'] > 0].shape[0]
+                            colA4.metric("Contratos Vencidos", vencidos)
+                        else:
+                            colA4.metric("Contratos Vencidos", "N/A")
                         st.markdown("---")
-                    st.markdown("---")
                     
                     # Filtros
-                    st.markdown("### 🔍 Filtros")
-                    
-                    col_filtro1, col_filtro2, col_filtro3 = st.columns(3)
-                    
-                    with col_filtro1:
-                        busca = st.text_input("🔎 Buscar por nome ou contrato", "")
-                    
-                    with col_filtro2:
+                        st.markdown("### 🔍 Filtros")
+                        col_filtro1, col_filtro2, col_filtro3, col_filtro4, col_filtro5, col_filtro6 = st.columns(6)
+                        busca = col_filtro1.text_input("🔎 Buscar por nome ou contrato", "")
                         if 'Setor' in df.columns:
                             setores_list = ['Todos'] + sorted(df['Setor'].dropna().unique().tolist())
-                            filtro_setor = st.selectbox("Setor", setores_list)
+                            filtro_setor = col_filtro2.selectbox("Setor", setores_list)
                         else:
                             filtro_setor = 'Todos'
-                    
-                    with col_filtro3:
                         if 'Responsavel' in df.columns:
                             resp_list = ['Todos'] + sorted(df['Responsavel'].dropna().unique().tolist())
-                            filtro_resp = st.selectbox("Responsável", resp_list)
+                            filtro_resp = col_filtro3.selectbox("Responsável", resp_list)
                         else:
                             filtro_resp = 'Todos'
-
-                        # Filtros Avançados
-                        col_filtro4, col_filtro5, col_filtro6 = st.columns(3)
-                        with col_filtro4:
-                            if 'Empresa Contratada' in df.columns:
-                                empresas_list = ['Todos'] + sorted(df['Empresa Contratada'].dropna().unique().tolist())
-                                filtro_empresa = st.selectbox("Empresa Contratada", empresas_list)
-                            else:
-                                filtro_empresa = 'Todos'
-                        with col_filtro5:
-                            if 'Statusprj' in df.columns:
-                                status_list = ['Todos'] + sorted(df['Statusprj'].dropna().unique().tolist())
-                                filtro_status = st.selectbox("Status Projeto", status_list)
-                            else:
-                                filtro_status = 'Todos'
-                        with col_filtro6:
-                            if 'Ano Empreendimento' in df.columns:
-                                anos_list = ['Todos'] + sorted(df['Ano Empreendimento'].dropna().unique().tolist())
-                                filtro_ano = st.selectbox("Ano Empreendimento", anos_list)
-                            else:
-                                filtro_ano = 'Todos'
+                        if 'Empresa Contratada' in df.columns:
+                            empresas_list = ['Todos'] + sorted(df['Empresa Contratada'].dropna().unique().tolist())
+                            filtro_empresa = col_filtro4.selectbox("Empresa Contratada", empresas_list)
+                        else:
+                            filtro_empresa = 'Todos'
+                        if 'Statusprj' in df.columns:
+                            status_list = ['Todos'] + sorted(df['Statusprj'].dropna().unique().tolist())
+                            filtro_status = col_filtro5.selectbox("Status Projeto", status_list)
+                        else:
+                            filtro_status = 'Todos'
+                        if 'Ano Empreendimento' in df.columns:
+                            anos_list = ['Todos'] + sorted(df['Ano Empreendimento'].dropna().unique().tolist())
+                            filtro_ano = col_filtro6.selectbox("Ano Empreendimento", anos_list)
+                        else:
+                            filtro_ano = 'Todos'
                     
                     # Aplicar filtros
                     df_filtrado = df.copy()
                     
                     if busca:
-                            busca_lower = busca.lower()
-                            df_filtrado = df_filtrado[df_filtrado.astype(str).apply(lambda x: busca_lower in x.str.lower().to_string(), axis=1)]
+                        busca_lower = busca.lower()
+                        df_filtrado = df_filtrado[df_filtrado.astype(str).apply(lambda x: busca_lower in x.str.lower().to_string(), axis=1)]
                     
                     if filtro_setor != 'Todos' and 'Setor' in df_filtrado.columns:
                         df_filtrado = df_filtrado[df_filtrado['Setor'] == filtro_setor]
                     
                     if filtro_resp != 'Todos' and 'Responsavel' in df_filtrado.columns:
                         df_filtrado = df_filtrado[df_filtrado['Responsavel'] == filtro_resp]
-
                         if filtro_empresa != 'Todos' and 'Empresa Contratada' in df_filtrado.columns:
                             df_filtrado = df_filtrado[df_filtrado['Empresa Contratada'] == filtro_empresa]
                         if filtro_status != 'Todos' and 'Statusprj' in df_filtrado.columns:
