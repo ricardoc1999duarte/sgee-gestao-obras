@@ -4,7 +4,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
-from streamlit_js_eval import streamlit_js_eval
+
 
 # --- CONFIGURAÇÕES GLOBAIS ---
 FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
@@ -28,55 +28,9 @@ with st.sidebar:
 
     st.markdown("---")
     st.header("📸 Diagnóstico")
+    st.caption("A funcionalidade de gerar imagem da tela foi temporariamente desativada devido a problemas técnicos. Por favor, use as ferramentas de captura de tela do seu sistema operacional.")
     
-    if st.button("Gerar Imagem da Tela"):
-        streamlit_js_eval(js_expressions='''
-            // Função para capturar e baixar a tela
-            function captureAndDownload() {
-                const element = document.querySelector("[data-testid='stAppViewContainer']");
-                if (!element) {
-                    alert('Elemento do painel não encontrado.');
-                    return;
-                }
 
-                html2canvas(element, {
-                    scale: 1.5,
-                    useCORS: true,
-                    backgroundColor: '#ffffff'
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'diagnostico_painel.png';
-                    link.href = canvas.toDataURL('image/png');
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }).catch(err => {
-                    console.error('Erro ao gerar imagem:', err);
-                    alert('Falha ao gerar imagem. Verifique o console do navegador.');
-                });
-            }
-
-            // Verifica se html2canvas já está disponível
-            if (typeof html2canvas !== 'undefined') {
-                captureAndDownload();
-            } else {
-                // Carrega html2canvas dinamicamente
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-                script.onload = () => {
-                    if (typeof html2canvas !== 'undefined') {
-                        captureAndDownload();
-                    } else {
-                        alert('Falha ao carregar html2canvas.');
-                    }
-                };
-                script.onerror = () => {
-                    alert('Não foi possível carregar a biblioteca html2canvas.');
-                };
-                document.head.appendChild(script);
-            }
-        ''')
-    st.caption("Gera uma imagem PNG da tela atual para análise.")
 
 # --- FUNÇÕES DE BACK-END ---
 @st.cache_resource
@@ -223,3 +177,4 @@ if 'Saldo Contratual' in df_calc.columns and 'Total Contrato' in df_calc.columns
     st.metric("Média % Saldo", f"{df_calc['% saldo'].mean():.2f}%")
 
 st.markdown("---")
+
