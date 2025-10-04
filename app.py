@@ -135,7 +135,7 @@ kpi1.metric("Total de Registros", len(df_calc))
 
 # Usando os nomes EXATOS das colunas do seu Excel
 # Baseado na imagem de diagnóstico anterior:
-# Colunas: [..., 'Setor Responsavel', 'Responsável', ...]
+# Colunas: [..., \'Setor Responsavel\', \'Responsável\', ...]
 if "Setor Responsavel" in df_calc.columns:
     kpi2.metric("Setores Únicos", df_calc["Setor Responsavel"].nunique())
 else:
