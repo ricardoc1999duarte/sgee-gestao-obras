@@ -1,17 +1,29 @@
-
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
 
+# --- CONSTANTES E CONFIGURAÇÕES GLOBAIS ---
+FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+SETOR_COL = "Setor Responsavel"
+RESP_COL = "Responsável"
+
+st.set_page_config(page_title="SGEE+PO - Análise de Contratos", layout="wide", initial_sidebar_state="expanded" )
 
 # --- FUNÇÕES DE BACK-END ---
 
 @st.cache_resource
 def conectar_google_drive():
+    """Estabelece conexão com a API do Google Drive usando as credenciais do Streamlit."""
     try:
+        # Verifica se a configuração do segredo do Streamlit existe
+        if "gcp_service_account" not in st.secrets:
+            st.error("Configuração 'gcp_service_account' não encontrada nos segredos do Streamlit.")
+            return None
         creds = service_account.Credentials.from_service_account_info(
             st.secrets["gcp_service_account"],
             scopes=SCOPES
@@ -22,13 +34,12 @@ def conectar_google_drive():
         return None
 
 @st.cache_data(ttl=3600)
-def baixar_arquivo_drive(file_id: str):
-    service = conectar_google_drive()
-    if not service:
+def baixar_arquivo_drive(_service, file_id: str):
+    """Baixa um arquivo do Google Drive pelo seu ID e o retorna como um buffer em memória."""
+    if not _service:
         return None
-
     try:
-        request = service.files().get_media(fileId=file_id)
+        request = _service.files().get_media(fileId=file_id)
         buffer = io.BytesIO()
         downloader = MediaIoBaseDownload(buffer, request)
         done = False
@@ -40,180 +51,218 @@ def baixar_arquivo_drive(file_id: str):
         st.error(f"❌ Erro ao baixar arquivo do Drive: {e}")
         return None
 
+@st.cache_data(ttl=3600)
+def carregar_dados(file_id):
+    """Carrega os dados do Excel (local ou Drive) e faz o pré-processamento."""
+    file_buffer = None
+    try:
+        file_buffer = open("SGEE+PO.xlsm", "rb")
+        st.sidebar.info("Dados carregados do arquivo local 'SGEE+PO.xlsm'.")
+    except FileNotFoundError:
+        st.sidebar.warning("Arquivo local não encontrado. Tentando baixar do Google Drive...")
+        service = conectar_google_drive()
+        if service:
+            file_buffer = baixar_arquivo_drive(service, file_id)
+            if file_buffer:
+                st.sidebar.success("Dados carregados com sucesso do Google Drive.")
+        else:
+            st.sidebar.error("Falha na conexão com o Drive. Não foi possível carregar os dados.")
+
+
+    if file_buffer is None:
+        st.error("❌ Falha crítica: Não foi possível carregar o ficheiro Excel de nenhuma fonte.")
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_excel(file_buffer, sheet_name="SGEEePO", engine="openpyxl")
+        
+        date_columns = ["Data Assin Cnt", "Data Inicio Cnt", "Data Fim Cnt Original", "Data Fim Cnt Com Aditivos", "Data Última Renovação"]
+        for col in date_columns:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors="coerce")
+        
+        financial_columns = ["Total Contrato", "Valor Contrato", "Valor Aditivos", "Saldo Contratual", "Total Medido Acumulado"]
+        for col in financial_columns:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+        if "% Aditivo" in df.columns:
+            df["% Aditivo"] = pd.to_numeric(df["% Aditivo"], errors="coerce").fillna(0)
+        
+        if "Data Fim Cnt Com Aditivos" in df.columns:
+            df["Dias Restantes"] = (df["Data Fim Cnt Com Aditivos"] - pd.to_datetime("today")).dt.days
+        if "Total Medido Acumulado" in df.columns and "Total Contrato" in df.columns:
+            df["% executado"] = (df["Total Contrato"] > 0).astype(int) * (df["Total Medido Acumulado"] / df["Total Contrato"] * 100).fillna(0)
+        if "Saldo Contratual" in df.columns and "Total Contrato" in df.columns:
+            df["% saldo"] = (df["Total Contrato"] > 0).astype(int) * (df["Saldo Contratual"] / df["Total Contrato"] * 100).fillna(0)
+
+        return df.dropna(how="all")
+    except Exception as e:
+        st.error(f"❌ Falha ao processar a planilha: {e}")
+        return pd.DataFrame()
+
 def generate_instructions(df: pd.DataFrame) -> list[str]:
+    """Gera uma lista de instruções e alertas com base em regras de negócio aplicadas ao DataFrame."""
     instructions = []
-    df_copy = df.copy() # Trabalhar com uma cópia para evitar SettingWithCopyWarning
+    if df.empty:
+        return ["ℹ️ Nenhum dado para análise com os filtros selecionados."]
+        
+    df_copy = df.copy()
 
     # Regra 1: Índice Aditivo Global
-    if 
+    if all(c in df_copy.columns for c in ["Valor Contrato", "Valor Aditivos", "% Aditivo"]):
         df_filtered_aditivos = df_copy[df_copy["% Aditivo"] <= 50]
-        total_valor_contrato = df_filtered_aditivos["Valor Contrato"].sum() if "Valor Contrato" in df_filtered_aditivos.columns else 0
-        total_valor_aditivos = df_filtered_aditivos["Valor Aditivos"].sum() if "Valor Aditivos" in df_filtered_aditivos.columns else 0
+        total_valor_contrato = df_filtered_aditivos["Valor Contrato"].sum()
+        total_valor_aditivos = df_filtered_aditivos["Valor Aditivos"].sum()
         indice_aditivo_global = (total_valor_aditivos / total_valor_contrato * 100) if total_valor_contrato != 0 else 0
         if indice_aditivo_global > 10:
-            instructions.append(f"⚠️ **Alerta de Aditivos:** O Índice Aditivo Global ({indice_aditivo_global:.2f}%) está acima de 10%. Isso pode indicar um alto volume de aditivos. Considere rever os processos de planeamento inicial ou a gestão de mudanças nos contratos.")
+            instructions.append(f"⚠️ **Alerta de Aditivos:** O Índice Aditivo Global ({indice_aditivo_global:.2f}%) está acima de 10%.")
 
     # Regra 2: Contratos Atrasados
-    if "Data Fim Cnt Com Aditivos" in df_copy.columns:
-        df_copy["Dias Restantes"] = (df_copy["Data Fim Cnt Com Aditivos"] - pd.to_datetime("today")).dt.days
+    if "Dias Restantes" in df_copy.columns:
         contratos_atrasados = df_copy[df_copy["Dias Restantes"] < 0].shape[0]
         if contratos_atrasados > 0:
-            instructions.append(f"⏰ **Atrasos Identificados:** Existem {contratos_atrasados} contratos com dias restantes negativos. Priorize a revisão e o acompanhamento destes contratos para mitigar atrasos maiores e possíveis penalidades.")
+            instructions.append(f"⏰ **Atrasos Identificados:** Existem {contratos_atrasados} contratos com prazo expirado.")
 
     # Regra 3: Baixo % Executado
-    if "Total Medido Acumulado" in df_copy.columns and "Total Contrato" in df_copy.columns:
-        df_copy["% executado"] = (df_copy["Total Medido Acumulado"] / df_copy["Total Contrato"] * 100).fillna(0)
-        contratos_baixo_execucao = df_copy[df_copy["% executado"] < 20].shape[0]
+    if "% executado" in df_copy.columns:
+        contratos_baixo_execucao = df_copy[(df_copy["% executado"] > 0) & (df_copy["% executado"] < 20)].shape[0]
         if contratos_baixo_execucao > 0:
-            instructions.append(f"📉 **Baixa Execução Financeira:** {contratos_baixo_execucao} contratos apresentam menos de 20% de execução financeira. Investigue as causas e acelere o progresso para evitar subutilização de recursos ou atrasos no projeto.")
+            instructions.append(f"📉 **Baixa Execução:** {contratos_baixo_execucao} contratos apresentam execução financeira entre 1% e 20%.")
+
+    # Regra 4: Contratos na Zona de Risco (Atrasado e Baixa Execução)
+    if all(c in df_copy.columns for c in ["Dias Restantes", "% executado"]):
+        contratos_risco = df_copy[(df_copy["Dias Restantes"] < 0) & (df_copy["% executado"] < 80)].shape[0]
+        if contratos_risco > 0:
+            instructions.append(f"🚨 **Zona de Risco:** {contratos_risco} contratos estão atrasados e com execução abaixo de 80%. Ação imediata recomendada.")
+
+    # Regra 5: Setor com Maior Valor
+    if all(c in df_copy.columns for c in ["Valor Contrato", SETOR_COL]):
+        setor_maior_valor = df_copy.groupby(SETOR_COL)["Valor Contrato"].sum().idxmax()
+        instructions.append(f"💰 **Principal Setor:** O setor '{setor_maior_valor}' concentra o maior volume de valor em contratos na seleção atual.")
 
     if not instructions:
-        instructions.append("✅ Nenhuma instrução específica gerada com base nas regras atuais. Os indicadores parecem estar dentro dos parâmetros definidos.")
+        instructions.append("✅ Nenhum alerta crítico identificado. Os indicadores parecem estar dentro dos parâmetros.")
 
     return instructions
 
-# --- CONFIGURAÇÕES GLOBAIS ---
-FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+# --- LAYOUT DA APLICAÇÃO ---
 
-st.set_page_config(
-    page_title="SGEE+PO - Reconstrução",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Título
+st.title("🏗️ SGEE+PO - Painel de Análise de Contratos")
 
-# --- CARREGAMENTO DOS DADOS ---
-st.title("🏗️ SGEE+PO - Reconstrução do Painel")
-st.info("Passo 1: Carregando dados e exibindo KPIs. Ignore a aparência por enquanto.")
+# Carregamento dos dados
+df_calc = carregar_dados(FILE_ID)
 
-file_buffer = None
-try:
-    file_buffer = open("SGEE+PO.xlsm", "rb")
-    st.info("✅ Ficheiro Excel carregado localmente.")
-except FileNotFoundError:
-    st.info("Ficheiro Excel local não encontrado. A tentar carregar do Google Drive...")
-    file_buffer = baixar_arquivo_drive(FILE_ID)
-
-if not file_buffer:
-    st.error("❌ Não foi possível carregar o ficheiro Excel, nem localmente nem do Google Drive.")
+if df_calc.empty:
     st.stop()
 
-try:
-    df_calc = pd.read_excel(file_buffer, sheet_name="SGEEePO", engine="openpyxl")
-    # Converter colunas de data para o tipo datetime
-    date_columns = ["Data Assin Cnt", "Data Inicio Cnt", "Data Fim Cnt Original", "Data Fim Cnt Com Aditivos", "Data Última Renovação"]
-    for col in date_columns:
-        if col in df_calc.columns:
-            df_calc[col] = pd.to_datetime(df_calc[col], errors="coerce")
-    
-    # Converter colunas financeiras para o tipo numérico
-    financial_columns = ["Total Contrato", "Valor Contrato", "Valor Aditivos", "Saldo Contratual", "Total Medido Acumulado"]
-    for col in financial_columns:
-        if col in df_calc.columns:
-            df_calc[col] = pd.to_numeric(df_calc[col], errors="coerce").fillna(0)
-
-    df_calc = df_calc.dropna(how="all")
-    # Converter a coluna 
-    if 
-        df_calc["% Aditivo"] = pd.to_numeric(df_calc["% Aditivo"], errors="coerce").fillna(0)
-
-    if df_calc.empty:
-        st.error("⚠️ A planilha foi carregada, mas está vazia.")
-        st.stop()
-    st.success("✅ Dados carregados com sucesso!")
-except Exception as e:
-    st.error(f"❌ Falha ao processar a planilha: {e}")
-    st.stop()
-
-# --- SIDEBAR ---
+# --- SIDEBAR E FILTROS ---
 with st.sidebar:
-    st.header("⚙️ Configurações")
+    st.header("⚙️ Filtros e Ações")
     
-    if st.button("🔄 Atualizar Dados"):
+    if SETOR_COL in df_calc.columns:
+        setores_unicos = sorted(df_calc[SETOR_COL].dropna().unique())
+        setores_selecionados = st.multiselect("Filtrar por Setor", setores_unicos, default=setores_unicos)
+    else:
+        setores_selecionados = []
+
+    if RESP_COL in df_calc.columns:
+        responsaveis_unicos = sorted(df_calc[RESP_COL].dropna().unique())
+        responsaveis_selecionados = st.multiselect("Filtrar por Responsável", responsaveis_unicos, default=responsaveis_unicos)
+    else:
+        responsaveis_selecionados = []
+
+    st.markdown("---")
+    
+    if st.button("🔄 Recarregar Dados do Arquivo"):
         st.cache_data.clear()
-        st.cache_resource.clear()
         st.rerun()
 
-    st.markdown("---")
-    st.header("📸 Diagnóstico")
-    st.caption("A funcionalidade de gerar imagem da tela foi temporariamente desativada devido a problemas técnicos. Por favor, use as ferramentas de captura de tela do seu sistema operacional.")
+# Aplicando filtros
+df_filtrado = df_calc.copy()
+if setores_selecionados and SETOR_COL in df_filtrado.columns:
+    df_filtrado = df_filtrado[df_filtrado[SETOR_COL].isin(setores_selecionados)]
+if responsaveis_selecionados and RESP_COL in df_filtrado.columns:
+    df_filtrado = df_filtrado[df_filtrado[RESP_COL].isin(responsaveis_selecionados)]
 
-    st.markdown("---")
-    st.header("💡 Gerador de Instruções")
-    if st.button("Gerar Instruções"): 
-        generated_instructions = generate_instructions(df_calc)
-        for instruction in generated_instructions:
-            st.info(instruction)
-    st.caption("Gera instruções e insights acionáveis com base nos dados e KPIs.")
+# --- PAINEL PRINCIPAL ---
 
-# --- KPIs ---
-st.header("📊 Indicadores Chave")
+# Seção de Instruções
+st.header("💡 Análise e Instruções")
+with st.container(border=True):
+    generated_instructions = generate_instructions(df_filtrado)
+    for instruction in generated_instructions:
+        st.markdown(instruction)
+
+st.markdown("---")
+
+# KPIs
+st.header("📊 Indicadores Chave da Seleção")
 col1, col2, col3 = st.columns(3)
+col1.metric("Contratos na Seleção", len(df_filtrado))
+if SETOR_COL in df_filtrado.columns:
+    col2.metric("Setores na Seleção", df_filtrado[SETOR_COL].nunique())
+if RESP_COL in df_filtrado.columns:
+    col3.metric("Responsáveis na Seleção", df_filtrado[RESP_COL].nunique())
 
-col1.metric("Total de Registros", len(df_calc))
+# KPIs Financeiros, de Prazo e Execução em colunas
+st.markdown("---")
+col_fin1, col_fin2, col_fin3 = st.columns(3)
+col_prazo1, col_prazo2, col_exec1 = st.columns(3)
 
-setor_col = "Setor Responsavel"
-if setor_col in df_calc.columns:
-    col2.metric("Setores Únicos", df_calc[setor_col].nunique())
+# Cálculos Financeiros
+total_valor_contrato = 0
+total_valor_aditivos = 0
+indice_aditivo_global = 0
+if not df_filtrado.empty and all(c in df_filtrado.columns for c in ["% Aditivo", "Valor Contrato", "Valor Aditivos"]):
+    df_filtered_aditivos = df_filtrado[df_filtrado["% Aditivo"] <= 50]
+    total_valor_contrato = df_filtered_aditivos["Valor Contrato"].sum()
+    total_valor_aditivos = df_filtered_aditivos["Valor Aditivos"].sum()
+    if total_valor_contrato > 0:
+        indice_aditivo_global = (total_valor_aditivos / total_valor_contrato * 100)
+col_fin1.metric("Somatório Valor Contrato", f"R$ {total_valor_contrato:,.2f}")
+col_fin2.metric("Somatório dos Aditivos", f"R$ {total_valor_aditivos:,.2f}")
+col_fin3.metric("Índice Aditivo Global", f"{indice_aditivo_global:.2f}%")
+
+# Cálculos de Prazo e Execução
+if "Dias Restantes" in df_filtrado.columns:
+    contratos_atrasados = df_filtrado[df_filtrado["Dias Restantes"] < 0].shape[0]
+    col_prazo1.metric("Média de Dias Restantes", f"{df_filtrado['Dias Restantes'].mean():.0f} dias")
+    col_prazo2.metric("Total de Contratos Atrasados", contratos_atrasados)
+if "% executado" in df_filtrado.columns:
+    col_exec1.metric("Média % Executado", f"{df_filtrado['% executado'].mean():.2f}%")
+
+st.markdown("---")
+
+# --- SEÇÃO DE GRÁFICOS ---
+st.header("📈 Visualizações Gráficas")
+
+if df_filtrado.empty:
+    st.warning("Nenhum dado para exibir nos gráficos com os filtros atuais.")
 else:
-    col2.warning(f"Coluna \'{setor_col}\' não encontrada.")
-
-resp_col = "Responsável"
-if resp_col in df_calc.columns:
-    col3.metric("Responsáveis Únicos", df_calc[resp_col].nunique())
-else:
-    col3.warning(f"Coluna \'{resp_col}\' não encontrada.")
-
-st.markdown("---")
-
-# --- CÁLCULOS DE KPIS ADICIONAIS ---
-
-st.header("📊 KPIs Financeiros")
-
-# Filtrar dados para cálculos de aditivos (excluir % Aditivo > 50)
-df_filtered_aditivos = df_calc[df_calc["% Aditivo"] <= 50] if 
-
-# Somatório Valor Contrato
-total_valor_contrato = df_filtered_aditivos["Valor Contrato"].sum() if "Valor Contrato" in df_filtered_aditivos.columns else 0
-
-# Somatório dos Aditivos
-total_valor_aditivos = df_filtered_aditivos["Valor Aditivos"].sum() if "Valor Aditivos" in df_filtered_aditivos.columns else 0
-
-# Índice do Aditivo Global em %
-indice_aditivo_global = (total_valor_aditivos / total_valor_contrato * 100) if total_valor_contrato != 0 else 0
-
-col4, col5, col6 = st.columns(3)
-col4.metric("Somatório Valor Contrato (c/ filtro)", f"R$ {total_valor_contrato:,.2f}")
-col5.metric("Somatório dos Aditivos (c/ filtro)", f"R$ {total_valor_aditivos:,.2f}")
-col6.metric("Índice Aditivo Global (c/ filtro)", f"{indice_aditivo_global:,.2f}%")
+    col_graph1, col_graph2 = st.columns(2)
+    with col_graph1:
+        if "Valor Contrato" in df_filtrado.columns and SETOR_COL in df_filtrado.columns:
+            st.subheader("Valor por Setor")
+            df_setor = df_filtrado.groupby(SETOR_COL)["Valor Contrato"].sum().sort_values(ascending=False)
+            fig_bar = px.bar(df_setor, y="Valor Contrato", text_auto='.2s')
+            fig_bar.update_layout(showlegend=False, yaxis_title="Valor Total (R$)", xaxis_title="Setor")
+            st.plotly_chart(fig_bar, use_container_width=True)
+    
+    with col_graph2:
+        if "% executado" in df_filtrado.columns and "Dias Restantes" in df_filtrado.columns:
+            st.subheader("Execução vs. Prazos")
+            fig_scatter = px.scatter(
+                df_filtrado, x="Dias Restantes", y="% executado",
+                color=SETOR_COL, hover_data=["Nº Contrato", "Objeto", "Total Contrato"]
+            )
+            fig_scatter.add_vline(x=0, line_dash="dash", line_color="red")
+            fig_scatter.add_hline(y=80, line_dash="dash", line_color="orange")
+            st.plotly_chart(fig_scatter, use_container_width=True)
 
 st.markdown("---")
 
-# --- DADOS DETALHADOS ---
-st.header("📋 Dados Detalhados")
-st.data_editor(df_calc, use_container_width=True, hide_index=True, num_rows="dynamic")
-
-# --- CÁLCULOS DE DATAS ---
-
-if "Data Fim Cnt Com Aditivos" in df_calc.columns:
-    df_calc["Dias Restantes"] = (df_calc["Data Fim Cnt Com Aditivos"] - pd.to_datetime("today")).dt.days
-    df_calc["Atrasos"] = df_calc["Dias Restantes"].apply(lambda x: x if x < 0 else 0)
-    st.header("📅 Indicadores de Prazo")
-    col_dr, col_at = st.columns(2)
-    col_dr.metric("Média de Dias Restantes", f"{df_calc["Dias Restantes"].mean():.0f} dias")
-    col_at.metric("Total de Contratos Atrasados", df_calc[df_calc["Atrasos"] < 0].shape[0])
-    st.markdown("---")
-
-# --- CÁLCULOS FINANCEIROS ADICIONAIS ---
-
-if "Total Medido Acumulado" in df_calc.columns and "Total Contrato" in df_calc.columns:
-    df_calc["% executado"] = (df_calc["Total Medido Acumulado"] / df_calc["Total Contrato"] * 100).fillna(0)
-    st.header("💰 Indicadores de Execução Financeira")
-    st.metric("Média % Executado", f"{df_calc["% executado"].mean():.2f}%")
-
-if "Saldo Contratual" in df_calc.columns and "Total Contrato" in df_calc.columns:
-    df_calc["% saldo"] = (df_calc["Saldo Contratual"] / df_calc["Total Contrato"] * 100).fillna(0)
-    st.metric("Média % Saldo", f"{df_calc["% saldo"].mean():.2f}%")
-
-st.markdown("---")
-
+# Dados Detalhados
+st.header("📋 Dados Detalhados da Seleção")
+st.data_editor(df_filtrado, use_container_width=True, hide_index=True, num_rows="dynamic")
