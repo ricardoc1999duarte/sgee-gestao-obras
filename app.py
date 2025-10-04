@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
-from streamlit_js_eval import streamlit_js_eval # Importado para o botão de captura
+from streamlit_js_eval import streamlit_js_eval
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -77,7 +76,7 @@ try:
     file_stream = baixar_arquivo_drive(service, "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg")
     # Lendo o Excel sem renomear nada
     df_calc = pd.read_excel(file_stream, sheet_name="SGEEePO", engine="openpyxl")
-    df_calc = df_calc.dropna(how=\'all\')
+    df_calc = df_calc.dropna(how=\'all\') # LINHA CORRIGIDA AQUI
 
     if df_calc is None or df_calc.empty:
         st.error("Os dados não puderam ser carregados ou processados.")
