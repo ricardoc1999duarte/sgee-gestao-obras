@@ -10,9 +10,12 @@ st.set_page_config(
 
 # --- CABEÇALHO COM LOGO ---
 try:
-    st.image("logo_dgce.png", use_column_width=True)
+    # Centraliza e limita a largura do logo
+    col_logo = st.columns([1, 2, 1])
+    with col_logo[1]:
+        st.image("logo_dgce.png", use_column_width="auto")
 except:
-    # Fallback textual se a imagem não for encontrada
+    # Fallback textual
     st.markdown("""
     <div style="text-align: center; padding: 10px;">
         <h1 style="color: #0066cc; margin: 0; font-size: 28px;">DGCE</h1>
@@ -24,7 +27,7 @@ except:
 
 # Status "EM CONSTRUÇÃO"
 st.markdown("""
-<div style="text-align: center; margin-top: -10px; margin-bottom: 20px;">
+<div style="text-align: center; margin: -10px 0 20px 0;">
     <span style="display: inline-block; background-color: #2d3748; color: white; padding: 3px 10px; border-radius: 4px; font-size: 12px;">
         🚧 EM CONSTRUÇÃO
     </span>
@@ -48,7 +51,7 @@ with col2:
     st.page_link("pages/3_GECIE.py", label="💰 GECIE", icon="📉")
     st.page_link("pages/4_CONTROLES.py", label="🔧 Controles", icon="⚙️")
 
-# --- SIDEBAR: Navegação duplicada para acessibilidade ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.header("🧭 Navegação")
     st.markdown("🏠 **Início** (você está aqui)")
