@@ -1,0 +1,48 @@
+## Detalhes para o Botão Gerador de Instruções
+
+Este documento descreve a funcionalidade e as considerações para o desenvolvimento de um "Botão Gerador de Instruções" na aplicação Streamlit, visando torná-lo interativo e útil para futuras aplicações.
+
+### 1. Objetivo da Funcionalidade
+
+O botão deve gerar instruções ou insights acionáveis com base nos dados carregados e nos KPIs calculados. O objetivo é fornecer ao utilizador uma análise rápida e sugestões para otimização ou identificação de problemas, transformando dados brutos em conhecimento.
+
+### 2. Fontes de Dados para Geração de Instruções
+
+As instruções podem ser geradas com base em:
+
+*   **Dados Atuais do DataFrame (`df_calc`):** Análise de valores, tendências, outliers.
+*   **KPIs Calculados:** Comparação de KPIs com benchmarks (se disponíveis), identificação de KPIs fora da meta.
+*   **Filtros Aplicados:** As instruções podem ser contextuais aos filtros que o utilizador aplicou na tabela de dados.
+*   **Regras de Negócio Pré-definidas:** Um conjunto de regras lógicas que, quando satisfeitas pelos dados, disparam instruções específicas.
+
+### 3. Tipos de Instruções a Gerar (Exemplos)
+
+As instruções podem variar em complexidade e formato:
+
+*   **Alertas:** "O Índice Aditivo Global está acima de 10%, indicando um alto volume de aditivos. Considere rever os processos de planeamento inicial."
+*   **Sugestões de Otimização:** "Existem X contratos com Dias Restantes negativos. Priorize a revisão destes contratos para evitar atrasos maiores."
+*   **Análise de Tendências:** "O valor médio dos contratos no Setor Y diminuiu 15% no último trimestre. Investigue as causas."
+*   **Recomendações de Ação:** "Contrato Z apresenta um % executado muito baixo. Verifique o progresso físico e financeiro."
+
+### 4. Interatividade e Personalização
+
+Para evitar mensagens fixas e não interativas, o gerador de instruções deve:
+
+*   **Ser Contextual:** As instruções devem mudar dinamicamente com base nos filtros aplicados pelo utilizador na tabela de dados. Se o utilizador filtrar por um setor específico, as instruções devem refletir a situação desse setor.
+*   **Permitir Configuração:** Futuramente, pode-se permitir que o utilizador configure quais tipos de instruções deseja ver ou quais limiares acionam os alertas.
+*   **Formato de Saída Flexível:** As instruções podem ser apresentadas como texto formatado (Markdown), listas, ou até mesmo como um pequeno relatório dentro da aplicação.
+
+### 5. Implementação Técnica (Sugestões)
+
+*   **Função Dedicada:** Criar uma função Python (`generate_instructions(df_filtered)`) que receba o DataFrame filtrado como entrada e retorne uma lista de strings (instruções).
+*   **Lógica Condicional:** Dentro dessa função, usar `if/elif/else` para verificar condições nos dados e gerar as instruções correspondentes.
+*   **Exibição no Streamlit:** As instruções podem ser exibidas numa secção dedicada da aplicação, talvez num `st.expander` ou `st.container` para melhor organização.
+*   **Integração com o Botão:** O botão "Gerar Instruções" chamaria esta função e exibiria os resultados.
+
+### 6. Próximos Passos
+
+1.  Definir um conjunto inicial de 3-5 regras de negócio para a geração de instruções.
+2.  Implementar a função `generate_instructions`.
+3.  Integrar o botão e a exibição das instruções na interface do Streamlit.
+
+Ao seguir estas diretrizes, o botão gerador de instruções pode tornar-se uma ferramenta poderosa de BI, fornecendo insights dinâmicos e relevantes para o utilizador.
