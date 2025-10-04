@@ -74,23 +74,8 @@ def processar_dados_excel(file_stream):
         df = pd.read_excel(file_stream, sheet_name="SGEEePO", engine="openpyxl")
         df = df.dropna(how="all")
         
-        # MAPEAMENTO PRECISO DAS COLUNAS (BASEADO NA SUA IMAGEM DE DIAGNÓSTICO)
-        rename_map = {
-            "Num CNT": "Num_CNT",
-            "Objeto Cnt": "Objeto_Cnt",
-            "Cod Empreendimento": "Cod_Empreendimento",
-            "Nome Empreendimento": "Nome_Empreendimento",
-            "Statusprj(Ajustada)": "Status_Obra",
-            "Statusprj": "Status_Projeto",
-            "Status Contrato Ajustado": "Status_Contrato",
-            "Dias após vencimento": "Dias_Apos_Vencimento",
-            "Setor Responsavel": "Setor", # Assumindo que esta coluna existe
-            "Responsável": "Responsavel" # Assumindo que esta coluna existe
-            # Adicione outras colunas que você precisa aqui
-        }
-        
-        # Renomeia apenas as colunas que existem no DataFrame
-        df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns}, inplace=True)
+        # *** NENHUM RENOMEAMENTO DE COLUNAS AQUI ***
+        # Usaremos os nomes EXATOS que vieram do Excel.
         
         return df
     except Exception as e:
@@ -147,14 +132,18 @@ except Exception as e:
 st.header("Indicadores Chave")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("Total de Registros", len(df_calc))
-if "Setor" in df_calc.columns:
-    kpi2.metric("Setores Únicos", df_calc["Setor"].nunique())
+
+# Usando os nomes EXATOS das colunas do seu Excel
+# 'Setor Responsavel' e 'Responsável' são os nomes que você me mostrou no diagnóstico
+if "Setor Responsavel" in df_calc.columns:
+    kpi2.metric("Setores Únicos", df_calc["Setor Responsavel"].nunique())
 else:
-    kpi2.metric("Setores Únicos", "N/A - Coluna não encontrada")
-if "Responsavel" in df_calc.columns:
-    kpi3.metric("Responsáveis Únicos", df_calc["Responsavel"].nunique())
+    kpi2.metric("Setores Únicos", "N/A - Coluna 'Setor Responsavel' não encontrada")
+
+if "Responsável" in df_calc.columns:
+    kpi3.metric("Responsáveis Únicos", df_calc["Responsável"].nunique())
 else:
-    kpi3.metric("Responsáveis Únicos", "N/A - Coluna não encontrada")
+    kpi3.metric("Responsáveis Únicos", "N/A - Coluna 'Responsável' não encontrada")
 
 st.markdown("--- ")
 
@@ -165,8 +154,8 @@ col_g1, col_g2 = st.columns(2)
 with col_g1:
     with st.container(border=True):
         st.subheader("Contratos por Setor")
-        if "Setor" in df_calc.columns and not df_calc["Setor"].dropna().empty:
-            setor_counts = df_calc["Setor"].value_counts()
+        if "Setor Responsavel" in df_calc.columns and not df_calc["Setor Responsavel"].dropna().empty:
+            setor_counts = df_calc["Setor Responsavel"].value_counts()
             fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4)
             fig_setor.update_layout(
                 template="plotly_white", 
@@ -176,13 +165,13 @@ with col_g1:
             )
             st.plotly_chart(fig_setor, use_container_width=True)
         else:
-            st.warning("Coluna \"Setor\" não encontrada ou vazia.")
+            st.warning("Coluna 'Setor Responsavel' não encontrada ou vazia.")
 
 with col_g2:
     with st.container(border=True):
         st.subheader("Top 10 Responsáveis")
-        if "Responsavel" in df_calc.columns and not df_calc["Responsavel"].dropna().empty:
-            resp_counts = df_calc["Responsavel"].value_counts().nlargest(10)
+        if "Responsável" in df_calc.columns and not df_calc["Responsável"].dropna().empty:
+            resp_counts = df_calc["Responsável"].value_counts().nlargest(10)
             fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation="h", labels={"y": "", "x": "Nº de Contratos"})
             fig_resp.update_layout(
                 template="plotly_white", 
@@ -192,7 +181,7 @@ with col_g2:
             )
             st.plotly_chart(fig_resp, use_container_width=True)
         else:
-            st.warning("Coluna \"Responsavel\" não encontrada ou vazia.")
+            st.warning("Coluna 'Responsável' não encontrada ou vazia.")
 
 st.markdown("--- ")
 
