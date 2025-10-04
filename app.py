@@ -6,108 +6,127 @@ from googleapiclient.http import MediaIoBaseDownload
 import io
 from streamlit_js_eval import streamlit_js_eval
 
-# --- 1. CONFIGURAÇÃO DA PÁGINA ---
+# --- 1. CONFIGURAÇÕES GLOBAIS ---
+FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+
 st.set_page_config(
     page_title="SGEE+PO - Reconstrução",
-    layout="wide"
- )
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# --- 2. SIDEBAR COM O ESSENCIAL ---
+# --- 2. SIDEBAR ---
 with st.sidebar:
-    st.header("Configurações")
-    FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
-    st.info(f"ID do Arquivo: ...{FILE_ID[-10:]}")
-    if st.button("🔄 Atualizar Dados"):
-        st.cache_data.clear(); st.cache_resource.clear(); st.rerun()
-
-    st.markdown("--- ")
-    st.header("Diagnóstico")
+    st.header("⚙️ Configurações")
+    st.info(f"ID do Arquivo: `{FILE_ID[-10:]}`")
     
-    # BOTÃO DE CAPTURA DE TELA (RESTAURADO E FUNCIONAL)
-    if st.button("📸 Gerar Imagem da Tela"):
-        streamlit_js_eval(js_expressions="""
-            const html2canvasScript = document.createElement("script");
-            html2canvasScript.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-            document.head.appendChild(html2canvasScript );
+    if st.button("🔄 Atualizar Dados"):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.rerun()
 
-            html2canvasScript.onload = () => {
-                const element = window.parent.document.querySelector("[data-testid=\"stAppViewContainer\"]");
-                html2canvas(element, { scale: 1.5, useCORS: true }).then(canvas => {
-                    const image = canvas.toDataURL("image/png");
-                    const a = document.createElement("a");
-                    a.href = image;
-                    a.download = "diagnostico_painel.png";
-                    a.click();
+    st.markdown("---")
+    st.header("📸 Diagnóstico")
+    
+    if st.button("Gerar Imagem da Tela"):
+        streamlit_js_eval(js_expressions="""
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            document.head.appendChild(script);
+            script.onload = () => {
+                const container = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
+                if (!container) {
+                    alert('Elemento do painel não encontrado.');
+                    return;
+                }
+                html2canvas(container, { scale: 1.5, useCORS: true }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'diagnostico_painel.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
                 });
             };
         """)
-    st.caption("Gera uma imagem (PNG) de toda a tela para análise.")
+    st.caption("Captura uma imagem PNG da tela atual para análise.")
 
 # --- 3. FUNÇÕES DE BACK-END ---
 @st.cache_resource
 def conectar_google_drive():
+    """Conecta ao Google Drive usando credenciais de conta de serviço."""
     try:
-        credentials = service_account.Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/drive.readonly"]
-         )
-        return build("drive", "v3", credentials=credentials)
+        creds = service_account.Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=SCOPES
+        )
+        return build("drive", "v3", credentials=creds)
     except Exception as e:
-        st.error(f"Erro de conexão com o Google Drive: {e}"); return None
+        st.error(f"❌ Falha ao conectar ao Google Drive: {e}")
+        return None
 
 @st.cache_data(ttl=3600)
-def baixar_arquivo_drive(_service, file_id):
-    try:
-        request = _service.files().get_media(fileId=file_id)
-        file_stream = io.BytesIO()
-        downloader = MediaIoBaseDownload(file_stream, request)
-        done = False
-        while not done: status, done = downloader.next_chunk()
-        file_stream.seek(0)
-        return file_stream
-    except Exception as e:
-        st.error(f"Erro ao baixar arquivo do Drive: {e}"); return None
+def baixar_arquivo_drive(file_id: str):
+    """Baixa um arquivo do Google Drive e retorna um buffer em memória."""
+    service = conectar_google_drive()
+    if not service:
+        return None
 
-# --- 4. CORPO PRINCIPAL ---
+    try:
+        request = service.files().get_media(fileId=file_id)
+        buffer = io.BytesIO()
+        downloader = MediaIoBaseDownload(buffer, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+        buffer.seek(0)
+        return buffer
+    except Exception as e:
+        st.error(f"❌ Erro ao baixar arquivo do Drive: {e}")
+        return None
+
+# --- 4. CARREGAMENTO DOS DADOS ---
 st.title("🏗️ SGEE+PO - Reconstrução do Painel")
 st.info("Passo 1: Carregando dados e exibindo KPIs. Ignore a aparência por enquanto.")
 
-try:
-    service = conectar_google_drive()
-    file_stream = baixar_arquivo_drive(service, "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg")
-    # Lendo o Excel sem renomear nada
-    df_calc = pd.read_excel(file_stream, sheet_name="SGEEePO", engine="openpyxl")
-    df_calc = df_calc.dropna(how=\'all\') # LINHA CORRIGIDA AQUI
+file_buffer = baixar_arquivo_drive(FILE_ID)
+if not file_buffer:
+    st.stop()
 
-    if df_calc is None or df_calc.empty:
-        st.error("Os dados não puderam ser carregados ou processados.")
+try:
+    df_calc = pd.read_excel(file_buffer, sheet_name="SGEEePO", engine="openpyxl")
+    df_calc = df_calc.dropna(how='all')
+    if df_calc.empty:
+        st.error("⚠️ A planilha foi carregada, mas está vazia.")
         st.stop()
     st.success("✅ Dados carregados com sucesso!")
 except Exception as e:
-    st.error(f"Falha crítica na inicialização do painel. Erro: {e}")
+    st.error(f"❌ Falha ao processar a planilha: {e}")
     st.stop()
 
-# --- SEÇÃO DE KPIs (O ÚNICO ELEMENTO ADICIONADO) ---
-st.header("Indicadores Chave")
-kpi1, kpi2, kpi3 = st.columns(3)
+# --- 5. EXIBIÇÃO DE KPIs ---
+st.header("📊 Indicadores Chave")
 
-kpi1.metric("Total de Registros", len(df_calc))
+col1, col2, col3 = st.columns(3)
 
-# Verificação de segurança para o KPI de Setor
-# Usando o nome exato da coluna que vimos no diagnóstico
-if "Setor Responsavel" in df_calc.columns:
-    kpi2.metric("Setores Únicos", df_calc["Setor Responsavel"].nunique())
+# KPI 1: Total de registros
+col1.metric("Total de Registros", len(df_calc))
+
+# KPI 2: Setores únicos
+setor_col = "Setor Responsavel"
+if setor_col in df_calc.columns:
+    col2.metric("Setores Únicos", df_calc[setor_col].nunique())
 else:
-    kpi2.metric("Setores Únicos", "Coluna \'Setor Responsavel\' não encontrada")
+    col2.warning(f"Coluna '{setor_col}' não encontrada.")
 
-# Verificação de segurança para o KPI de Responsável
-# Usando o nome exato da coluna que vimos no diagnóstico
-if "Responsável" in df_calc.columns:
-    kpi3.metric("Responsáveis Únicos", df_calc["Responsável"].nunique())
+# KPI 3: Responsáveis únicos
+resp_col = "Responsável"
+if resp_col in df_calc.columns:
+    col3.metric("Responsáveis Únicos", df_calc[resp_col].nunique())
 else:
-    kpi3.metric("Responsáveis Únicos", "Coluna \'Responsável\' não encontrada")
+    col3.warning(f"Coluna '{resp_col}' não encontrada.")
 
 st.markdown("---")
 
-# --- SEÇÃO DE DADOS DETALHADOS ---
-st.header("Dados Detalhados")
-st.dataframe(df_calc)
+# --- 6. EXIBIÇÃO DA TABELA ---
+st.header("📋 Dados Detalhados")
+st.dataframe(df_calc, use_container_width=True)
