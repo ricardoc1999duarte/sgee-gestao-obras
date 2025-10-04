@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
 from streamlit_js_eval import streamlit_js_eval
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -13,24 +14,15 @@ st.set_page_config(
     page_icon="🏗️",
     layout="wide",
     initial_sidebar_state="expanded"
- )
+)
 
 # FORÇAR TEMA CLARO DO STREAMLIT E ESTILOS GERAIS
 st.markdown(
     """
     <style>
-    /* Força o tema claro do Streamlit */
-    .st-emotion-cache-vk3288 { /* Seletor para o tema principal do Streamlit */
-        background-color: #F0F2F6; /* Fundo claro */
-        color: #1E293B; /* Texto escuro */
-    }
-    /* Garante que o texto em geral seja escuro */
     body, h1, h2, h3, h4, h5, h6, p, .stMarkdown, label, [data-testid="stMetricLabel"] {
         color: #1E293B !important;
     }
-
-    /* Outros estilos permanecem os mesmos */
-    @media print { .noprint { display: none !important; } }
     [data-testid="stAppViewContainer"] { background-color: #F0F2F6; }
     h1, h3 { color: #0B3D91; }
     h3 { border-bottom: 2px solid #DDE6F6; padding-bottom: 8px; margin-top: 24px; }
@@ -43,17 +35,17 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # --- 2. FUNÇÕES DE BACK-END ---
 @st.cache_resource
 def conectar_google_drive():
     try:
         credentials = service_account.Credentials.from_service_account_info(
             st.secrets["gcp_service_account"], scopes=["https://www.googleapis.com/auth/drive.readonly"]
-         )
+        )
         return build("drive", "v3", credentials=credentials)
     except Exception as e:
-        st.error(f"Erro de conexão com o Google Drive: {e}"); return None
+        st.error(f"Erro de conexão com o Google Drive: {e}")
+        return None
 
 @st.cache_data(ttl=3600)
 def baixar_arquivo_drive(_service, file_id):
@@ -62,56 +54,38 @@ def baixar_arquivo_drive(_service, file_id):
         file_stream = io.BytesIO()
         downloader = MediaIoBaseDownload(file_stream, request)
         done = False
-        while not done: status, done = downloader.next_chunk()
+        while not done:
+            status, done = downloader.next_chunk()
         file_stream.seek(0)
         return file_stream
     except Exception as e:
-        st.error(f"Erro ao baixar arquivo do Drive: {e}"); return None
+        st.error(f"Erro ao baixar arquivo do Drive: {e}")
+        return None
 
 @st.cache_data(ttl=3600)
 def processar_dados_excel(file_stream):
     try:
         df = pd.read_excel(file_stream, sheet_name="SGEEePO", engine="openpyxl")
         df = df.dropna(how="all")
-        
-        # *** NENHUM RENOMEAMENTO DE COLUNAS AQUI ***
-        # Usaremos os nomes EXATOS que vieram do Excel.
-        
         return df
     except Exception as e:
-        st.error(f"Erro ao processar o arquivo Excel: {e}"); return None
+        st.error(f"Erro ao processar o arquivo Excel: {e}")
+        return None
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    st.image("https://i.imgur.com/t2yw4UH.png", width=80 )
+    st.image("https://i.imgur.com/t2yw4UH.png", width=80)
     st.header("Configurações")
     FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
     st.info(f"ID do Arquivo: ...{FILE_ID[-10:]}")
     if st.button("🔄 Atualizar Dados"):
-        st.cache_data.clear(); st.cache_resource.clear(); st.rerun()
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.rerun()
 
     st.markdown("--- ")
-    st.header("Diagnóstico")
-    
-    # BOTÃO DE CAPTURA DE TELA (RESTAURADO E FUNCIONAL)
-    if st.button("📸 Gerar Imagem do Painel"):
-        streamlit_js_eval(js_expressions="""
-            const html2canvasScript = document.createElement("script");
-            html2canvasScript.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-            document.head.appendChild(html2canvasScript );
-
-            html2canvasScript.onload = () => {
-                const element = window.parent.document.querySelector("[data-testid=\"stAppViewContainer\"]");
-                html2canvas(element, { scale: 1.5, useCORS: true }).then(canvas => {
-                    const image = canvas.toDataURL("image/png");
-                    const a = document.createElement("a");
-                    a.href = image;
-                    a.download = "captura_painel.png";
-                    a.click();
-                });
-            };
-        """)
-    st.caption("Gera uma imagem (PNG) de todo o painel para análise e diagnóstico.")
+    st.header("Downloads")
+    st.caption("Use os botões de download abaixo dos gráficos e dados.")
 
 # --- 4. CORPO PRINCIPAL DO APLICATIVO ---
 st.title("🏗️ SGEE+PO - Painel de Gestão de Obras")
@@ -133,18 +107,15 @@ st.header("Indicadores Chave")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("Total de Registros", len(df_calc))
 
-# Usando os nomes EXATOS das colunas do seu Excel
-# Baseado na imagem de diagnóstico anterior:
-# Colunas: [..., \'Setor Responsavel\', \'Responsável\', ...]
 if "Setor Responsavel" in df_calc.columns:
     kpi2.metric("Setores Únicos", df_calc["Setor Responsavel"].nunique())
 else:
-    kpi2.metric("Setores Únicos", "N/A - Coluna \'Setor Responsavel\' não encontrada")
+    kpi2.metric("Setores Únicos", "N/A")
 
 if "Responsável" in df_calc.columns:
     kpi3.metric("Responsáveis Únicos", df_calc["Responsável"].nunique())
 else:
-    kpi3.metric("Responsáveis Únicos", "N/A - Coluna \'Responsável\' não encontrada")
+    kpi3.metric("Responsáveis Únicos", "N/A")
 
 st.markdown("--- ")
 
@@ -158,34 +129,41 @@ with col_g1:
         if "Setor Responsavel" in df_calc.columns and not df_calc["Setor Responsavel"].dropna().empty:
             setor_counts = df_calc["Setor Responsavel"].value_counts()
             fig_setor = px.pie(values=setor_counts.values, names=setor_counts.index, hole=0.4)
-            fig_setor.update_layout(
-                template="plotly_white", 
-                paper_bgcolor="rgba(255,255,255,1)", 
-                plot_bgcolor="rgba(255,255,255,1)",
-                showlegend=True
-            )
+            fig_setor.update_traces(textinfo="percent+label")
             st.plotly_chart(fig_setor, use_container_width=True)
+
+            # Botão para exportar PNG
+            img_bytes = pio.to_image(fig_setor, format="png", scale=3)
+            st.download_button("📥 Baixar gráfico (PNG)", img_bytes, "contratos_por_setor.png", "image/png")
         else:
-            st.warning("Coluna \'Setor Responsavel\' não encontrada ou vazia.")
+            st.warning("Coluna 'Setor Responsavel' não encontrada ou vazia.")
 
 with col_g2:
     with st.container(border=True):
         st.subheader("Top 10 Responsáveis")
         if "Responsável" in df_calc.columns and not df_calc["Responsável"].dropna().empty:
             resp_counts = df_calc["Responsável"].value_counts().nlargest(10)
-            fig_resp = px.bar(y=resp_counts.index, x=resp_counts.values, orientation="h", labels={"y": "", "x": "Nº de Contratos"})
-            fig_resp.update_layout(
-                template="plotly_white", 
-                paper_bgcolor="rgba(255,255,255,1)", 
-                plot_bgcolor="rgba(255,255,255,1)",
-                yaxis={"categoryorder":"total ascending"}
+            fig_resp = px.bar(
+                y=resp_counts.index,
+                x=resp_counts.values,
+                orientation="h",
+                labels={"y": "", "x": "Nº de Contratos"}
             )
+            fig_resp.update_layout(template="plotly_white", yaxis={"categoryorder": "total ascending"})
             st.plotly_chart(fig_resp, use_container_width=True)
+
+            # Botão para exportar PNG
+            img_bytes_resp = pio.to_image(fig_resp, format="png", scale=3)
+            st.download_button("📥 Baixar gráfico (PNG)", img_bytes_resp, "top10_responsaveis.png", "image/png")
         else:
-            st.warning("Coluna \'Responsável\' não encontrada ou vazia.")
+            st.warning("Coluna 'Responsável' não encontrada ou vazia.")
 
 st.markdown("--- ")
 
 # --- SEÇÃO DE DADOS DETALHADOS ---
 st.header("Dados Detalhados")
 st.dataframe(df_calc)
+
+# Botão para exportar dados completos
+csv = df_calc.to_csv(index=False).encode("utf-8")
+st.download_button("📥 Baixar dados (CSV)", csv, "dados_completos.csv", "text/csv")
