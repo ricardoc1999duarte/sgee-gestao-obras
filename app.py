@@ -4,6 +4,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
+from streamlit_js_eval import streamlit_js_eval # Importado de volta
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -11,10 +12,38 @@ st.set_page_config(
     layout="wide"
  )
 
-st.title("🚧 SGEE+PO - Módulo de Diagnóstico de Dados 🚧")
-st.warning("Estamos em modo de segurança. O objetivo é apenas carregar e exibir os dados brutos.")
+# --- BOTÃO DE CAPTURA NA SIDEBAR ---
+with st.sidebar:
+    st.header("Diagnóstico")
+    if st.button("📸 Gerar Imagem da Tela"):
+        streamlit_js_eval(js_expressions="""
+            const html2canvasScript = document.createElement('script');
+            html2canvasScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            document.head.appendChild(html2canvasScript );
 
-# --- 2. FUNÇÕES DE BACK-END (sem alterações) ---
+            html2canvasScript.onload = () => {
+                const element = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
+                html2canvas(element, { scale: 1.5, useCORS: true }).then(canvas => {
+                    const image = canvas.toDataURL('image/png');
+                    const a = document.createElement('a');
+                    a.href = image;
+                    a.download = 'diagnostico_painel.png';
+                    a.click();
+                });
+            };
+        """)
+    st.caption("Gera uma imagem (PNG) de toda a tela para análise.")
+
+
+# --- CORPO PRINCIPAL DO DIAGNÓSTICO ---
+st.title("🚧 SGEE+PO - Módulo de Diagnóstico de Dados 🚧")
+st.warning("Estamos em modo de segurança. O objetivo é apenas carregar e exibir os dados brutos para identificar o problema.")
+
+# --- CARREGAMENTO E EXIBIÇÃO ---
+FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
+st.info(f"Tentando carregar dados do arquivo ID: ...{FILE_ID[-10:]}")
+
+# Funções de conexão e download (colocadas aqui para simplificar o escopo)
 @st.cache_resource
 def conectar_google_drive():
     try:
@@ -40,10 +69,6 @@ def baixar_arquivo_drive(_service, file_id):
         st.error(f"Erro ao baixar arquivo do Drive: {e}")
         return None
 
-# --- 3. CARREGAMENTO E EXIBIÇÃO ---
-FILE_ID = "1VTCrrZWwWsmhE8nNrGWmEggrgeRbjCCg"
-st.info(f"Tentando carregar dados do arquivo ID: ...{FILE_ID[-10:]}")
-
 try:
     # PASSO 1: Conectar
     service = conectar_google_drive()
@@ -64,8 +89,9 @@ try:
         st.stop()
     st.success("✅ PASSO 3/4: Leitura do arquivo Excel bem-sucedida.")
     
+    # PASSO CRÍTICO: Imprimir os nomes das colunas exatamente como o Pandas os leu
     st.markdown("### Colunas Originais Encontradas no Arquivo:")
-    st.write(list(df_bruto.columns))
+    st.code(list(df_bruto.columns))
 
     # PASSO 4: Exibir DataFrame Bruto
     st.success("✅ PASSO 4/4: Exibindo os dados brutos abaixo.")
