@@ -134,16 +134,17 @@ kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("Total de Registros", len(df_calc))
 
 # Usando os nomes EXATOS das colunas do seu Excel
-# 'Setor Responsavel' e 'Responsável' são os nomes que você me mostrou no diagnóstico
+# Baseado na imagem de diagnóstico anterior:
+# Colunas: [..., 'Setor Responsavel', 'Responsável', ...]
 if "Setor Responsavel" in df_calc.columns:
     kpi2.metric("Setores Únicos", df_calc["Setor Responsavel"].nunique())
 else:
-    kpi2.metric("Setores Únicos", "N/A - Coluna 'Setor Responsavel' não encontrada")
+    kpi2.metric("Setores Únicos", "N/A - Coluna \'Setor Responsavel\' não encontrada")
 
 if "Responsável" in df_calc.columns:
     kpi3.metric("Responsáveis Únicos", df_calc["Responsável"].nunique())
 else:
-    kpi3.metric("Responsáveis Únicos", "N/A - Coluna 'Responsável' não encontrada")
+    kpi3.metric("Responsáveis Únicos", "N/A - Coluna \'Responsável\' não encontrada")
 
 st.markdown("--- ")
 
@@ -165,7 +166,7 @@ with col_g1:
             )
             st.plotly_chart(fig_setor, use_container_width=True)
         else:
-            st.warning("Coluna 'Setor Responsavel' não encontrada ou vazia.")
+            st.warning("Coluna \'Setor Responsavel\' não encontrada ou vazia.")
 
 with col_g2:
     with st.container(border=True):
@@ -181,7 +182,7 @@ with col_g2:
             )
             st.plotly_chart(fig_resp, use_container_width=True)
         else:
-            st.warning("Coluna 'Responsável' não encontrada ou vazia.")
+            st.warning("Coluna \'Responsável\' não encontrada ou vazia.")
 
 st.markdown("--- ")
 
