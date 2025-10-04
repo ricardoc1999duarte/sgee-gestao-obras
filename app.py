@@ -19,7 +19,7 @@ st.set_page_config(
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Configurações")
-    st.info(f"ID do Arquivo: `{FILE_ID[-10:]}`")
+    # st.info(f"ID do Arquivo: `{FILE_ID[-10:]}`") # Comentado, pois estamos a usar um ficheiro local
     
     if st.button("🔄 Atualizar Dados"):
         st.cache_data.clear()
@@ -30,7 +30,7 @@ with st.sidebar:
     st.header("📸 Diagnóstico")
     
     if st.button("Gerar Imagem da Tela"):
-        streamlit_js_eval(js_expressions="""
+        streamlit_js_eval(js_expressions='''
             // Função para capturar e baixar a tela
             function captureAndDownload() {
                 const element = document.querySelector("[data-testid='stAppViewContainer']");
@@ -75,7 +75,7 @@ with st.sidebar:
                 };
                 document.head.appendChild(script);
             }
-        """)
+        ''')
     st.caption("Gera uma imagem PNG da tela atual para análise.")
 
 # --- FUNÇÕES DE BACK-END ---
@@ -114,13 +114,37 @@ def baixar_arquivo_drive(file_id: str):
 st.title("🏗️ SGEE+PO - Reconstrução do Painel")
 st.info("Passo 1: Carregando dados e exibindo KPIs. Ignore a aparência por enquanto.")
 
-file_buffer = baixar_arquivo_drive(FILE_ID)
+file_buffer = None
+try:
+    file_buffer = open("SGEE+PO.xlsm", "rb")
+    st.info("✅ Ficheiro Excel carregado localmente.")
+except FileNotFoundError:
+    st.info("Ficheiro Excel local não encontrado. A tentar carregar do Google Drive...")
+    file_buffer = baixar_arquivo_drive(FILE_ID)
+
 if not file_buffer:
+    st.error("❌ Não foi possível carregar o ficheiro Excel, nem localmente nem do Google Drive.")
     st.stop()
 
 try:
     df_calc = pd.read_excel(file_buffer, sheet_name="SGEEePO", engine="openpyxl")
+    # Converter colunas de data para o tipo datetime
+    date_columns = ["Data Assin Cnt", "Data Inicio Cnt", "Data Fim Cnt Original", "Data Fim Cnt Com Aditivos", "Data Última Renovação"]
+    for col in date_columns:
+        if col in df_calc.columns:
+            df_calc[col] = pd.to_datetime(df_calc[col], errors='coerce')
+    
+    # Converter colunas financeiras para o tipo numérico
+    financial_columns = ["Total Contrato", "Valor Contrato", "Valor Aditivos", "Saldo Contratual", "Total Medido Acumulado"]
+    for col in financial_columns:
+        if col in df_calc.columns:
+            df_calc[col] = pd.to_numeric(df_calc[col], errors='coerce').fillna(0)
+
     df_calc = df_calc.dropna(how='all')
+    # Converter a coluna '% Aditivo' para numérica, se existir
+    if '% Aditivo' in df_calc.columns:
+        df_calc['% Aditivo'] = pd.to_numeric(df_calc['% Aditivo'], errors='coerce').fillna(0)
+
     if df_calc.empty:
         st.error("⚠️ A planilha foi carregada, mas está vazia.")
         st.stop()
@@ -149,6 +173,53 @@ else:
 
 st.markdown("---")
 
+# --- CÁLCULOS DE KPIS ADICIONAIS ---
+
+st.header("📊 KPIs Financeiros")
+
+# Filtrar dados para cálculos de aditivos (excluir % Aditivo > 50)
+df_filtered_aditivos = df_calc[df_calc['% Aditivo'] <= 50] if '% Aditivo' in df_calc.columns else df_calc
+
+# Somatório Valor Contrato
+total_valor_contrato = df_filtered_aditivos['Valor Contrato'].sum() if 'Valor Contrato' in df_filtered_aditivos.columns else 0
+
+# Somatório dos Aditivos
+total_valor_aditivos = df_filtered_aditivos['Valor Aditivos'].sum() if 'Valor Aditivos' in df_filtered_aditivos.columns else 0
+
+# Índice do Aditivo Global em %
+indice_aditivo_global = (total_valor_aditivos / total_valor_contrato * 100) if total_valor_contrato != 0 else 0
+
+col4, col5, col6 = st.columns(3)
+col4.metric("Somatório Valor Contrato (c/ filtro)", f"R$ {total_valor_contrato:,.2f}")
+col5.metric("Somatório dos Aditivos (c/ filtro)", f"R$ {total_valor_aditivos:,.2f}")
+col6.metric("Índice Aditivo Global (c/ filtro)", f"{indice_aditivo_global:,.2f}%")
+
+st.markdown("---")
+
 # --- DADOS DETALHADOS ---
 st.header("📋 Dados Detalhados")
 st.dataframe(df_calc, use_container_width=True)
+
+# --- CÁLCULOS DE DATAS ---
+
+if 'Data Fim Cnt Com Aditivos' in df_calc.columns:
+    df_calc['Dias Restantes'] = (df_calc['Data Fim Cnt Com Aditivos'] - pd.to_datetime('today')).dt.days
+    df_calc['Atrasos'] = df_calc['Dias Restantes'].apply(lambda x: x if x < 0 else 0)
+    st.header("📅 Indicadores de Prazo")
+    col_dr, col_at = st.columns(2)
+    col_dr.metric("Média de Dias Restantes", f"{df_calc['Dias Restantes'].mean():.0f} dias")
+    col_at.metric("Total de Contratos Atrasados", df_calc[df_calc['Atrasos'] < 0].shape[0])
+    st.markdown("---")
+
+# --- CÁLCULOS FINANCEIROS ADICIONAIS ---
+
+if 'Total Medido Acumulado' in df_calc.columns and 'Total Contrato' in df_calc.columns:
+    df_calc['% executado'] = (df_calc['Total Medido Acumulado'] / df_calc['Total Contrato'] * 100).fillna(0)
+    st.header("💰 Indicadores de Execução Financeira")
+    st.metric("Média % Executado", f"{df_calc['% executado'].mean():.2f}%")
+
+if 'Saldo Contratual' in df_calc.columns and 'Total Contrato' in df_calc.columns:
+    df_calc['% saldo'] = (df_calc['Saldo Contratual'] / df_calc['Total Contrato'] * 100).fillna(0)
+    st.metric("Média % Saldo", f"{df_calc['% saldo'].mean():.2f}%")
+
+st.markdown("---")
